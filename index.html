@@ -42,6 +42,11 @@
     border-bottom:4px solid var(--oak);
   }
   header.topbar .row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .brand-wrap{display:flex;align-items:center;gap:14px}.brand-mark{width:48px;height:48px;border-radius:14px;background:linear-gradient(145deg,#F3A24F,#C96E1A);display:grid;place-items:center;font-size:24px;box-shadow:0 8px 20px rgba(201,110,26,.3)}
+  .header-value{text-align:left;font-size:13px;color:#F7EBDD;max-width:330px}.header-value strong{display:block;color:#fff;font-size:15px;margin-bottom:2px}
+  .journey{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.journey-step{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:13px}.journey-step b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#FFF0E0;color:#A9550D}.journey-step strong{color:var(--ink);display:block;font-size:14px}
+  .trust-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.trust-chip{background:#EEF7F1;color:#287044;border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700}
+  .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.summary-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px}.summary-card span{display:block;color:var(--ink-soft);font-size:12px}.summary-card strong{font-size:22px;color:var(--walnut-dark)}
   header.topbar h1{
     font-size:22px;
     margin:0;
@@ -352,7 +357,7 @@
   @media(max-width:860px){
     header.topbar{padding:20px 18px;} header.topbar h1{font-size:20px;}
     main{padding:12px}.panel-body{padding:15px}.quote-paper{position:static}.grid2{gap:14px}
-    .quote-head{padding:16px}.quote-logo{width:52px;height:52px}.logo-upload{grid-template-columns:70px 1fr}.logo-preview{width:70px;height:70px}
+    .quote-head{padding:16px}.quote-logo{width:52px;height:52px}.logo-upload{grid-template-columns:70px 1fr}.logo-preview{width:70px;height:70px}.header-value{display:none}.journey{grid-template-columns:1fr}.journey-step{padding:10px 12px}.summary-grid{grid-template-columns:1fr 1fr}.summary-card:last-child{grid-column:1/-1}
   }
 </style>
 </head>
@@ -361,27 +366,30 @@
 
   <header class="topbar">
     <div class="row">
-      <div>
+      <div class="brand-wrap"><div class="brand-mark">🪚</div><div>
         <h1 id="bizTitle">מחשבון הצעות מחיר לנגרות</h1>
         <div class="biz" id="bizSubtitle">הגדר את שם העסק שלך בהגדרות המחירון</div>
-      </div>
+      </div></div>
+      <div class="header-value"><strong>מהתמונה להצעה מקצועית</strong>פחות התעסקות בניירת, יותר זמן לעבוד ולסגור לקוחות.</div>
     </div>
   </header>
 
   <nav class="tabs no-print">
-    <button class="active" data-tab="quote">הצעת מחיר</button>
-    <button data-tab="cutlist">🪚 פירוק לעבודה</button>
-    <button data-tab="orders">מעקב הזמנות</button>
-    <button data-tab="settings">הגדרות מחירון</button>
+    <button class="active" data-tab="quote">יצירת הצעה</button>
+    <button data-tab="cutlist">תכנון וחיתוך</button>
+    <button data-tab="orders">לקוחות והצעות</button>
+    <button data-tab="settings">העסק שלי</button>
   </nav>
 
   <main>
 
     <!-- TAB: QUOTE (price only) -->
     <section id="tab-quote">
+      <div class="journey no-print"><div class="journey-step"><b>1</b><span><strong>מוסיפים לקוח</strong>שם, טלפון וסוג העבודה</span></div><div class="journey-step"><b>2</b><span><strong>מתמחרים בקלות</strong>חומר, עבודה ותקורה</span></div><div class="journey-step"><b>3</b><span><strong>שולחים וסוגרים</strong>PDF מקצועי ישר לוואטסאפ</span></div></div>
+      <div class="trust-row no-print"><span class="trust-chip">✓ הצעה מקצועית</span><span class="trust-chip">✓ נשמרת אוטומטית</span><span class="trust-chip">✓ מוכנה לוואטסאפ</span></div>
       <div class="grid2">
         <div class="panel no-print">
-          <h2>פרטי הצעת המחיר</h2>
+          <h2>בואו נכין הצעה שהלקוח ירצה לאשר</h2>
           <div class="panel-body">
 
             <div id="aiBoxQ" class="ai-box">
@@ -501,7 +509,7 @@
     <!-- TAB: ORDERS -->
     <section id="tab-orders" style="display:none;">
       <div class="panel">
-        <h2>כל ההזמנות וההצעות</h2>
+        <h2>הלקוחות וההצעות שלי</h2>
         <div class="panel-body" id="ordersList">
           <div class="empty-state">טוען...</div>
         </div>
@@ -772,8 +780,8 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
 function renderHeader(){
   document.getElementById('bizTitle').textContent = settings.bizName ? settings.bizName : 'מחשבון הצעות מחיר לנגרות';
   document.getElementById('bizSubtitle').textContent = settings.bizName
-    ? 'מחשבון תמחור פנימי — לא מוצג ללקוח'
-    : 'הגדר את שם העסק שלך בטאב "הגדרות מחירון"';
+    ? 'הצעות מקצועיות, מסודרות ומוכנות לשליחה'
+    : 'הכינו הצעת מחיר מקצועית ושלחו אותה תוך דקות';
 }
 
 // ---------- material select ----------
@@ -1642,10 +1650,14 @@ function paidSum(q){ return (q.payments||[]).reduce((s,p)=>s+p.amount,0); }
 function renderOrders(){
   const wrap = document.getElementById('ordersList');
   if(!quotes.length){
-    wrap.innerHTML = '<div class="empty-state">עדיין אין הזמנות שמורות. צור הצעת מחיר בטאב הראשון ולחץ "שמור הזמנה".</div>';
+    wrap.innerHTML = '<div class="empty-state"><div style="font-size:42px;margin-bottom:8px;">🤝</div><h3 style="margin:0 0 6px;color:var(--ink);">הלקוח הראשון מתחיל בהצעה טובה</h3><p style="margin:0 0 16px;">עדיין אין הצעות שמורות. הכינו הצעה מקצועית ושלחו אותה ישירות בוואטסאפ.</p><button class="primary" onclick="document.querySelector(\'nav.tabs button[data-tab=quote]\').click()">יצירת הצעה חדשה</button></div>';
     return;
   }
-  wrap.innerHTML = quotes.map(q=>{
+  const openQuotes=quotes.filter(q=>q.status==='quote').length;
+  const production=quotes.filter(q=>q.status==='production').length;
+  const value=quotes.reduce((sum,q)=>sum+(Number(q.total)||0),0);
+  const summary=`<div class="summary-grid"><div class="summary-card"><span>הצעות פתוחות</span><strong>${openQuotes}</strong></div><div class="summary-card"><span>עבודות בייצור</span><strong>${production}</strong></div><div class="summary-card"><span>שווי הצעות</span><strong>₪${fmt(value)}</strong></div></div>`;
+  wrap.innerHTML = summary + quotes.map(q=>{
     const d = new Date(q.date).toLocaleDateString('he-IL');
     const paid = paidSum(q);
     const remaining = Math.max(0, q.total - paid);
