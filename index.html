@@ -72,7 +72,19 @@
 
   main{padding:24px;}
   .grid2{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start;}
-  @media (max-width:860px){.grid2{grid-template-columns:1fr;}}
+  @media (max-width:860px){
+    .grid2{grid-template-columns:1fr;}
+    main{padding:14px;}
+    nav.tabs{display:grid;grid-template-columns:1fr 1fr;}
+    nav.tabs button{min-height:48px;padding:10px 6px;border-bottom:2px solid var(--border);}
+    .row2,.part-row-dims,.part-row-edges,.add-pay-row{grid-template-columns:1fr;}
+    .actions-row{display:grid;grid-template-columns:1fr;}
+    .actions-row button,.actions-row a{width:100%;min-height:46px;text-align:center;}
+    .order-card,.order-right{align-items:stretch;width:100%;}
+    .order-right{display:grid;grid-template-columns:1fr 1fr;}
+    .order-info{width:100%;}
+    .quote-paper{order:2;}
+  }
 
   .panel{
     background:var(--card);
@@ -119,6 +131,11 @@
     font-family:inherit;
   }
   button.primary:hover{background:var(--oak-light);}
+  button.whatsapp,.whatsapp{
+    background:#168a48;color:#fff;border:0;padding:11px 18px;border-radius:3px;
+    font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;
+  }
+  button.whatsapp:hover,.whatsapp:hover{background:#11723b;}
   button.secondary{
     background:transparent;
     color:var(--walnut-dark);
@@ -374,8 +391,9 @@
             <textarea id="notes" placeholder="לדוגמה: זמן אספקה 14 יום, כולל התקנה"></textarea>
 
             <div class="actions-row">
-              <button class="primary" onclick="saveQuote()">שמור הזמנה</button>
+              <button class="primary" id="saveQuoteBtn" onclick="saveQuote()">שמור הצעת מחיר</button>
               <button class="secondary" onclick="window.print()">הדפס הצעה / שמור כ-PDF</button>
+              <button class="whatsapp" onclick="shareCurrentQuoteWhatsApp()">שלח הצעת מחיר בוואטסאפ</button>
             </div>
           </div>
         </div>
@@ -558,7 +576,7 @@
 const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
 const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-const supabaseClient = (SUPABASE_URL.startsWith('http'))
+const supabaseClient = (SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('YOUR_'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
@@ -566,13 +584,19 @@ const supabaseClient = (SUPABASE_URL.startsWith('http'))
 // backed by a single Supabase table (see supabase-schema.sql).
 const dbStorage = {
   async get(key){
-    if(!supabaseClient) throw new Error('Supabase not configured — see README.md');
+    if(!supabaseClient){
+      const value = localStorage.getItem('carpentry_quotes_' + key);
+      return value === null ? null : { key, value };
+    }
     const { data, error } = await supabaseClient.from('app_data').select('value').eq('id', key).maybeSingle();
     if(error) throw error;
     return data ? { key, value: data.value } : null;
   },
   async set(key, value){
-    if(!supabaseClient) throw new Error('Supabase not configured — see README.md');
+    if(!supabaseClient){
+      localStorage.setItem('carpentry_quotes_' + key, value);
+      return { key, value };
+    }
     const { error } = await supabaseClient.from('app_data').upsert({ id: key, value, updated_at: new Date().toISOString() });
     if(error) throw error;
     return { key, value };
@@ -582,6 +606,7 @@ const dbStorage = {
 let settings = null;
 let quotes = [];
 let editingMaterialsDraft = [];
+let editingQuoteId = null;
 
 const DEFAULT_SETTINGS = {
   bizName: "",
@@ -641,8 +666,10 @@ async function loadSettings(){
 async function persistSettings(){
   try{
     await dbStorage.set('settings', JSON.stringify(settings));
+    return true;
   }catch(e){
     showToast('שגיאה בשמירת הגדרות');
+    return false;
   }
 }
 
@@ -658,8 +685,10 @@ async function loadQuotes(){
 async function persistQuotes(){
   try{
     await dbStorage.set('quotes', JSON.stringify(quotes));
+    return true;
   }catch(e){
     showToast('שגיאה בשמירת ההזמנה');
+    return false;
   }
 }
 
@@ -1035,7 +1064,7 @@ function renderPreview(){
     ? workStages.filter(s=>s.name.trim() && parseFloat(s.hours)>0).map(s=>
         `<div class="qline"><span class="lbl">${escapeHtml(s.name)} (${s.hours} שעות)</span><span class="val">₪${fmt((parseFloat(s.hours)||0)*settings.laborRate)}</span></div>`
       ).join('')
-    : '';
+    : (c.overheadAmount>0 ? `<div class="qline"><span class="lbl">תכנון, ייצור ותקורה</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>` : '');
 
   const laborLine = settings.showLaborInQuote
     ? (stageLines || `<div class="qline"><span class="lbl">עבודה (${c.hours||0} שעות)</span><span class="val">₪${fmt(c.laborCost)}</span></div>`)
@@ -1072,6 +1101,45 @@ function renderPreview(){
 function fmt(n){ return (Math.round(n*100)/100).toLocaleString('he-IL'); }
 function escapeHtml(s){
   const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+function normalizeWhatsAppPhone(phone){
+  let digits = String(phone || '').replace(/\D/g,'');
+  if(digits.startsWith('0')) digits = '972' + digits.slice(1);
+  if(digits.startsWith('5')) digits = '972' + digits;
+  return /^9725\d{8}$/.test(digits) ? digits : '';
+}
+
+function nextQuoteNumber(){
+  const year = new Date().getFullYear();
+  const max = quotes.reduce((n,q)=>Math.max(n, Number(String(q.quoteNumber||'').split('-').pop())||0),0);
+  return `Q-${year}-${String(max+1).padStart(4,'0')}`;
+}
+
+function quoteWhatsAppText(q){
+  return `שלום ${q.clientName},\nמצורפת הצעת מחיר ${q.quoteNumber ? 'מספר '+q.quoteNumber+' ' : ''}עבור ${q.projectName}.\nסה״כ לתשלום: ₪${fmt(q.total)}${q.validUntil ? `\nההצעה בתוקף עד ${new Date(q.validUntil).toLocaleDateString('he-IL')}` : ''}.\n${settings.bizName || 'נגרות'}${settings.bizPhone ? ` | ${settings.bizPhone}` : ''}`;
+}
+
+function openWhatsApp(phone, text){
+  const normalized = normalizeWhatsAppPhone(phone);
+  if(!normalized){ showToast('הזן מספר נייד ישראלי תקין כדי לשלוח בוואטסאפ'); return false; }
+  window.open(`https://wa.me/${normalized}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  return true;
+}
+
+function shareCurrentQuoteWhatsApp(){
+  const name = document.getElementById('clientName').value.trim();
+  const phone = document.getElementById('clientPhone').value.trim();
+  if(!name){ showToast('הזן שם לקוח לפני השליחה'); return; }
+  const c = calcQuote();
+  if(c.total<=0){ showToast('לא ניתן לשלוח הצעה בסכום אפס'); return; }
+  const q = {clientName:name,clientPhone:phone,projectName:document.getElementById('projectName').value.trim()||'פרויקט ללא שם',total:c.total};
+  openWhatsApp(phone, quoteWhatsAppText(q));
+}
+
+function shareSavedQuoteWhatsApp(id){
+  const q = quotes.find(x=>x.id===id);
+  if(q) openWhatsApp(q.clientPhone, quoteWhatsAppText(q));
 }
 
 ['clientName','projectName','materialSelect','hardwareCost','notes'].forEach(id=>{
@@ -1387,11 +1455,17 @@ async function saveQuote(){
     showToast('הזן שם לקוח לפני השמירה');
     return;
   }
+  if(c.total<=0){ showToast('לא ניתן לשמור הצעת מחיר בסכום אפס'); return; }
+  const existing = editingQuoteId ? quotes.find(x=>x.id===editingQuoteId) : null;
+  const validUntil = new Date(); validUntil.setDate(validUntil.getDate()+14);
   const q = {
-    id: uid(),
+    id: existing ? existing.id : uid(),
+    quoteNumber: existing?.quoteNumber || nextQuoteNumber(),
     clientName, projectName,
     clientPhone: document.getElementById('clientPhone').value.trim(),
-    date: new Date().toISOString(),
+    date: existing?.date || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    validUntil: existing?.validUntil || validUntil.toISOString(),
     parts: getValidParts(),
     plinthHeightMm: parseFloat(document.getElementById('projectPlinthHeight').value) || 0,
     depthCm: parseFloat(document.getElementById('projectDepth').value) || 0,
@@ -1404,12 +1478,16 @@ async function saveQuote(){
     hours: c.hours,
     notes: document.getElementById('notes').value,
     total: c.total,
-    payments: [],
-    status: 'quote'
+    payments: existing?.payments || [],
+    status: existing?.status || 'quote'
   };
-  quotes.unshift(q);
-  await persistQuotes();
-  showToast('ההזמנה נשמרה ✓');
+  const previousQuotes = structuredCloneSafe(quotes);
+  if(existing) quotes = quotes.map(x=>x.id===q.id?q:x); else quotes.unshift(q);
+  const saved = await persistQuotes();
+  if(!saved){ quotes = previousQuotes; return; }
+  showToast(existing ? 'השינויים נשמרו ✓' : `הצעת מחיר ${q.quoteNumber} נשמרה ✓`);
+  editingQuoteId = null;
+  document.getElementById('saveQuoteBtn').textContent='שמור הצעת מחיר';
   document.getElementById('clientName').value='';
   document.getElementById('clientPhone').value='';
   document.getElementById('projectName').value='';
@@ -1449,6 +1527,7 @@ function renderOrders(){
       <div class="order-card" onclick="toggleExpand('${q.id}')" style="cursor:pointer;">
         <div class="order-info">
           <div class="name">${escapeHtml(q.clientName)} — ${escapeHtml(q.projectName)}</div>
+          <div class="sub">${escapeHtml(q.quoteNumber||'ללא מספר')} · בתוקף עד ${q.validUntil?new Date(q.validUntil).toLocaleDateString('he-IL'):'—'}</div>
           <div class="sub">${d} · ${escapeHtml(q.materialName||'')} · ${(q.parts||[]).length} חלקים בדוח חיתוך · ${(q.materialAreaM2||0).toFixed(2)} מ״ר לתמחור</div>
           <div class="pay-bar"><div class="pay-bar-fill" style="width:${pct}%;"></div></div>
           <div class="pay-sub">שולם ₪${fmt(paid)} מתוך ₪${fmt(q.total)} ${remaining>0?`— נותר ₪${fmt(remaining)}`:'— שולם במלואו ✓'}</div>
@@ -1456,12 +1535,35 @@ function renderOrders(){
         <div class="order-right">
           <div class="order-amount">₪${fmt(q.total)}</div>
           <button class="status-badge status-${q.status}" onclick="event.stopPropagation();cycleStatus('${q.id}')">${STATUS_LABELS[q.status]}</button>
+          <button class="secondary" onclick="event.stopPropagation();editQuote('${q.id}')">ערוך</button>
+          <button class="whatsapp" onclick="event.stopPropagation();shareSavedQuoteWhatsApp('${q.id}')">וואטסאפ</button>
           <button class="danger-link" onclick="event.stopPropagation();deleteQuote('${q.id}')">מחק</button>
         </div>
       </div>
       ${isOpen ? renderOrderDetail(q, remaining) : ''}
     </div>`;
   }).join('');
+}
+
+function editQuote(id){
+  const q = quotes.find(x=>x.id===id); if(!q) return;
+  editingQuoteId = id;
+  document.getElementById('clientName').value=q.clientName||'';
+  document.getElementById('clientPhone').value=q.clientPhone||'';
+  document.getElementById('projectName').value=q.projectName||'';
+  document.getElementById('materialArea').value=q.materialAreaM2||'';
+  document.getElementById('hardwareCost').value=q.hardware||'';
+  document.getElementById('notes').value=q.notes||'';
+  const mat=settings.materials.find(m=>m.name===q.materialName); if(mat) document.getElementById('materialSelect').value=mat.id;
+  parts=(q.parts&&q.parts.length)?structuredCloneSafe(q.parts):[blankPart()];
+  workStages=(q.workStages&&q.workStages.length)?structuredCloneSafe(q.workStages):[{id:uid(),name:'',hours:''}];
+  hardwareItems=(q.hardwareItems&&q.hardwareItems.length)?structuredCloneSafe(q.hardwareItems):[{id:uid(),name:'',qty:'1'}];
+  document.getElementById('projectPlinthHeight').value=q.plinthHeightMm||'';
+  document.getElementById('projectDepth').value=q.depthCm||'';
+  renderPartsList();renderWorkStagesList();renderHardwareItemsList();renderPreview();
+  document.getElementById('saveQuoteBtn').textContent='שמור שינויים';
+  document.querySelector('nav.tabs button[data-tab="quote"]').click();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function toggleExpand(id){
@@ -1564,8 +1666,10 @@ async function cycleStatus(id){
 }
 
 async function deleteQuote(id){
+  if(!confirm('למחוק את הצעת המחיר? לא ניתן לבטל פעולה זו.')) return;
   quotes = quotes.filter(x=>x.id!==id);
-  await persistQuotes();
+  const saved = await persistQuotes();
+  if(!saved){ await loadQuotes(); renderOrders(); return; }
   renderOrders();
   showToast('ההזמנה נמחקה');
 }
@@ -1643,7 +1747,8 @@ async function saveSettings(){
   settings.showOverheadInQuote = document.getElementById('setShowOverhead').checked;
   settings.materials = editingMaterialsDraft.filter(m=>m.name.trim().length>0);
   if(!settings.materials.length) settings.materials = structuredCloneSafe(DEFAULT_SETTINGS.materials);
-  await persistSettings();
+  const saved = await persistSettings();
+  if(!saved) return;
   renderHeader();
   renderMaterialSelect();
   renderPreview();
@@ -1655,6 +1760,11 @@ async function saveSettings(){
   document.getElementById('quotePreviewPanel').innerHTML = '<div class="empty-state">טוען נתונים...</div>';
   await loadSettings();
   await loadQuotes();
+  document.querySelectorAll('label').forEach(label=>{
+    if(label.htmlFor || label.querySelector('input,select,textarea')) return;
+    const field=label.nextElementSibling;
+    if(field && /^(INPUT|SELECT|TEXTAREA)$/.test(field.tagName) && field.id) label.htmlFor=field.id;
+  });
   renderHeader();
   renderMaterialSelect();
   document.getElementById('projectPlinthHeight').value = settings.plinthHeightMm;
