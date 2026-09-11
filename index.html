@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחשבון הצעות מחיר לנגרות</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --paper:#EFE7D8;
+    --paper-dark:#E4D9C4;
+    --ink:#2B2118;
+    --ink-soft:#5C4E3F;
+    --walnut:#6B4226;
+    --walnut-dark:#4A2C18;
+    --oak:#C2660B;
+    --oak-light:#DE8B3B;
+    --blueprint:#29456B;
+    --sage:#6B8F71;
+    --border:rgba(43,33,24,0.18);
+    --border-strong:rgba(43,33,24,0.32);
+    --card:#FBF8F2;
+    --danger:#A6432F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    line-height:1.5;
+  }
+  .app{max-width:1100px;margin:0 auto;padding:0 0 60px;}
+
+  /* header */
+  header.topbar{
+    background:
+      repeating-linear-gradient(135deg, var(--walnut-dark) 0px, var(--walnut-dark) 2px, var(--walnut) 2px, var(--walnut) 40px);
+    color:#F4EEE1;
+    padding:22px 24px;
+    border-bottom:4px solid var(--oak);
+  }
+  header.topbar .row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  header.topbar h1{
+    font-size:22px;
+    margin:0;
+    font-weight:800;
+    letter-spacing:0.3px;
+  }
+  header.topbar .biz{font-size:13px;opacity:0.85;margin-top:4px;}
+  nav.tabs{
+    display:flex;
+    gap:0;
+    background:var(--card);
+    border-bottom:2px solid var(--border-strong);
+    position:sticky;top:0;z-index:5;
+  }
+  nav.tabs button{
+    flex:1;
+    padding:14px 10px;
+    background:transparent;
+    border:none;
+    border-bottom:3px solid transparent;
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-family:inherit;
+  }
+  nav.tabs button.active{color:var(--walnut-dark);border-bottom-color:var(--oak);}
+  nav.tabs button:hover{background:var(--paper-dark);}
+
+  main{padding:24px;}
+  .grid2{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start;}
+  @media (max-width:860px){.grid2{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:4px;
+  }
+  .panel h2{
+    font-size:15px;
+    margin:0;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--paper-dark);
+    color:var(--walnut-dark);
+    font-weight:800;
+  }
+  .panel-body{padding:18px;}
+
+  label{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);margin:14px 0 5px;}
+  label:first-child{margin-top:0;}
+  input[type=text], input[type=number], select, textarea{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--border-strong);
+    border-radius:3px;
+    background:#fff;
+    font-size:14.5px;
+    font-family:inherit;
+    color:var(--ink);
+  }
+  input[type=number]{font-family:'Consolas','Courier New',monospace;}
+  textarea{resize:vertical;min-height:60px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .hint{font-size:12px;color:var(--ink-soft);opacity:0.8;margin-top:3px;}
+
+  button.primary{
+    background:var(--oak);
+    color:#fff;
+    border:none;
+    padding:11px 18px;
+    border-radius:3px;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  button.primary:hover{background:var(--oak-light);}
+  button.secondary{
+    background:transparent;
+    color:var(--walnut-dark);
+    border:1.5px solid var(--walnut-dark);
+    padding:9px 16px;
+    border-radius:3px;
+    font-size:13.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  button.secondary:hover{background:var(--paper-dark);}
+  button.link{background:none;border:none;color:var(--blueprint);cursor:pointer;font-size:13px;font-weight:700;padding:0;font-family:inherit;text-decoration:underline;}
+  button.danger-link{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12.5px;padding:0;font-family:inherit;text-decoration:underline;}
+  .actions-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+
+  /* quote preview - looks like a paper document */
+  .quote-paper{
+    background:#fff;
+    border:1px solid var(--border);
+    box-shadow:0 3px 0 rgba(43,33,24,0.06);
+    padding:0;
+    font-family:'Consolas','Courier New',monospace;
+  }
+  .quote-head{
+    padding:18px 20px 14px;
+    border-bottom:2px dashed var(--border-strong);
+    font-family:'Segoe UI',Arial,sans-serif;
+  }
+  .quote-head .biz-name{font-size:18px;font-weight:800;color:var(--walnut-dark);}
+  .quote-head .biz-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .quote-meta{padding:14px 20px;border-bottom:1px dashed var(--border-strong);font-size:13px;font-family:'Segoe UI',Arial,sans-serif;}
+  .quote-meta div{display:flex;justify-content:space-between;padding:2px 0;}
+  .quote-meta .k{color:var(--ink-soft);}
+  .quote-lines{padding:14px 20px;}
+  .qline{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0;border-bottom:1px dotted var(--border);}
+  .qline .lbl{font-family:'Segoe UI',Arial,sans-serif;color:var(--ink-soft);}
+  .qline .val{font-weight:700;}
+  .qtotal{
+    display:flex;justify-content:space-between;
+    padding:16px 20px;
+    background:var(--paper-dark);
+    font-size:19px;font-weight:800;color:var(--walnut-dark);
+    border-top:2px solid var(--oak);
+    font-family:'Segoe UI',Arial,sans-serif;
+  }
+  .empty-state{padding:40px 20px;text-align:center;color:var(--ink-soft);font-family:'Segoe UI',Arial,sans-serif;}
+
+  /* orders list */
+  .order-card{
+    background:var(--card);border:1px solid var(--border);border-radius:4px;
+    padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .order-info .name{font-weight:800;font-size:15px;}
+  .order-info .sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .order-amount{font-family:'Consolas','Courier New',monospace;font-weight:700;font-size:15px;color:var(--blueprint);}
+  .status-badge{
+    font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;cursor:pointer;border:none;font-family:inherit;
+  }
+  .status-quote{background:#EAD9C4;color:var(--walnut-dark);}
+  .status-production{background:#F0D9B5;color:#8A5A15;}
+  .status-delivered{background:#DCE8DE;color:var(--sage);}
+  .order-right{display:flex;align-items:center;gap:10px;}
+
+  /* materials list in settings */
+  .mat-row{display:grid;grid-template-columns:1fr 110px 34px;gap:8px;align-items:center;margin-bottom:8px;}
+  .mat-remove{background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;}
+
+  .ai-box{
+    border:1.5px dashed var(--blueprint);
+    background:#F2F5FA;
+    border-radius:4px;
+    padding:14px 16px;
+    margin-bottom:18px;
+  }
+  .ai-box-head{font-size:13.5px;font-weight:700;color:var(--blueprint);margin-bottom:10px;}
+  .ai-box input[type=file]{
+    width:100%;font-size:13px;background:#fff;border:1px solid var(--border-strong);
+    border-radius:3px;padding:7px;
+  }
+  #aiImgPreviewWrap img{max-width:100%;max-height:180px;border-radius:3px;margin-top:8px;display:block;border:1px solid var(--border);}
+  .ai-box button.secondary{margin-top:10px;width:100%;border-color:var(--blueprint);color:var(--blueprint);}
+  .ai-box button.secondary:disabled{opacity:0.45;cursor:not-allowed;}
+  .ai-status{font-size:12.5px;color:var(--ink-soft);margin-top:8px;min-height:16px;}
+  .ai-result{
+    margin-top:12px;background:#fff;border:1px solid var(--border);border-radius:3px;padding:12px 14px;font-size:13px;
+  }
+  .ai-result .warn{color:var(--danger);font-weight:700;font-size:12px;margin-bottom:8px;}
+  .ai-result .field{display:flex;justify-content:space-between;padding:3px 0;}
+  .ai-result .field b{font-family:'Consolas','Courier New',monospace;}
+  .ai-result button.primary{width:100%;margin-top:10px;padding:9px;font-size:13.5px;}
+
+  .pay-bar{height:6px;background:var(--paper-dark);border-radius:3px;overflow:hidden;margin-top:8px;width:220px;max-width:100%;}
+  .pay-bar-fill{height:100%;background:var(--sage);}
+  .pay-sub{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .order-detail{
+    background:var(--paper-dark);border:1px solid var(--border);border-top:none;
+    padding:14px 16px;border-radius:0 0 4px 4px;margin-top:-1px;margin-bottom:10px;
+  }
+  .detail-title{font-size:12.5px;font-weight:700;color:var(--walnut-dark);margin-bottom:8px;}
+  .pay-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dotted var(--border);}
+  .add-pay-row{display:grid;grid-template-columns:110px 1fr auto;gap:8px;margin-top:10px;}
+  .add-pay-row input{padding:7px 8px;font-size:13px;}
+  .reminder-block{margin-top:16px;padding-top:12px;border-top:1px dashed var(--border-strong);}
+  .rem-text{background:#fff;border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:13.5px;margin-top:8px;white-space:pre-wrap;}
+  .rem-actions{display:flex;gap:8px;margin-top:8px;}
+  .rem-actions .secondary{padding:7px 12px;font-size:12.5px;}
+
+  .checkbox-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-soft);margin-top:8px;cursor:pointer;}
+  .checkbox-label input{width:auto;}
+
+  .part-card{
+    background:#fff;border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:10px;
+  }
+  .part-row{display:flex;gap:8px;align-items:center;}
+  .part-name{flex:1;padding:8px 9px;font-size:13.5px;font-weight:600;}
+  .part-remove{background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;flex-shrink:0;}
+  .part-row-dims{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px;}
+  .part-warn{border-color:var(--danger);background:#FFF9F7;}
+  .part-warn-text{margin-top:8px;font-size:11.5px;color:var(--danger);font-weight:700;}
+  .cutlist-summary{
+    background:var(--paper-dark);border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin-top:10px;
+  }
+  .cl-summary-row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;}
+  .cl-summary-row b{font-family:'Consolas','Courier New',monospace;}
+  .cutlist-print .cl-meta-box{
+    display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;
+    background:#F7F3EA;border:1px solid #ddd;border-radius:4px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;
+  }
+  .cutlist-print .cl-meta-box div{display:flex;justify-content:space-between;}
+  .cutlist-print .cl-meta-box b{font-family:'Consolas','Courier New',monospace;}
+  .part-row-edges{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .mini-lbl{display:block;font-size:10.5px;color:var(--ink-soft);font-weight:700;margin-bottom:3px;}
+  .part-row-dims input, .part-row-edges select{width:100%;padding:7px 8px;font-size:13px;}
+  .part-note{width:100%;margin-top:8px;padding:7px 9px;font-size:12.5px;}
+
+  .stage-row{display:grid;grid-template-columns:1fr 90px 30px;gap:8px;align-items:center;margin-bottom:8px;}
+  .stage-row input{padding:8px 9px;font-size:13.5px;}
+  .stage-remove{background:none;border:none;color:var(--danger);font-size:17px;cursor:pointer;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--walnut-dark);color:#fff;padding:10px 20px;border-radius:4px;
+    font-size:13.5px;font-weight:600;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+
+  #cutlistPrintView{display:none;}
+  .cutlist-print h1{font-size:18px;margin-bottom:2px;font-family:'Segoe UI',Arial,sans-serif;}
+  .cutlist-print h2{font-size:14px;margin:20px 0 8px;font-family:'Segoe UI',Arial,sans-serif;color:var(--walnut-dark);}
+  .cutlist-print .cl-sub{font-size:13px;color:var(--ink-soft);margin-bottom:18px;font-family:'Segoe UI',Arial,sans-serif;}
+  .cutlist-print table{width:100%;border-collapse:collapse;font-size:14px;}
+  .cutlist-print th, .cutlist-print td{border:1px solid #ccc;padding:8px 10px;text-align:right;}
+  .cutlist-print th{background:var(--paper-dark);}
+  .cutlist-print .cl-note{margin-top:16px;font-size:12px;color:var(--ink-soft);font-family:'Segoe UI',Arial,sans-serif;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(43,33,24,0.55);z-index:100;
+    align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff;border-radius:6px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;
+    padding:22px 24px;position:relative;
+  }
+  .modal-close{position:absolute;top:12px;left:14px;background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;}
+  .modal-actions{display:flex;gap:10px;margin-top:16px;}
+
+  @media print{
+    header.topbar, nav.tabs, .no-print{display:none !important;}
+    body{background:#fff;}
+    main{padding:0;}
+    .grid2{display:block;}
+    .quote-paper{border:none;box-shadow:none;}
+    body.printing-cutlist .grid2{display:none !important;}
+    body.printing-cutlist #cutlistPrintView{display:block !important;}
+    .modal-overlay{position:static !important;background:none !important;padding:0 !important;display:block !important;}
+    .modal-box{box-shadow:none !important;max-height:none !important;overflow:visible !important;max-width:none !important;}
+    .modal-close, .modal-actions{display:none !important;}
+    body:not(.printing-cutlist) .modal-overlay{display:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="row">
+      <div>
+        <h1 id="bizTitle">מחשבון הצעות מחיר לנגרות</h1>
+        <div class="biz" id="bizSubtitle">הגדר את שם העסק שלך בהגדרות המחירון</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs no-print">
+    <button class="active" data-tab="quote">הצעת מחיר</button>
+    <button data-tab="cutlist">🪚 פירוק לעבודה</button>
+    <button data-tab="orders">מעקב הזמנות</button>
+    <button data-tab="settings">הגדרות מחירון</button>
+  </nav>
+
+  <main>
+
+    <!-- TAB: QUOTE (price only) -->
+    <section id="tab-quote">
+      <div class="grid2">
+        <div class="panel no-print">
+          <h2>פרטי הצעת המחיר</h2>
+          <div class="panel-body">
+
+            <div id="aiBoxQ" class="ai-box">
+              <div class="ai-box-head">📷 העלה תמונה — AI יעריך שטח חומר משוער להצעת מחיר מהירה</div>
+              <input type="file" id="aiImageInputQ" accept="image/*" capture="environment">
+              <div id="aiImgPreviewWrapQ"></div>
+              <button class="secondary" id="aiAnalyzeBtnQ" onclick="analyzeWithAIQuote()" disabled>נתח תמונה עם AI</button>
+              <div id="aiStatusQ" class="ai-status"></div>
+              <div id="aiResultBoxQ" class="ai-result" style="display:none;"></div>
+              <div class="hint" style="margin-top:8px;">להערכה מהירה של שטח בלבד. אם אתה רוצה פירוק מלא לחלקים לחיתוך — עבור לטאב "🪚 פירוק לעבודה".</div>
+            </div>
+
+            <label>שם לקוח</label>
+            <input type="text" id="clientName" placeholder="לדוגמה: אחמד / דוד כהן">
+
+            <label>טלפון לקוח (לתזכורות בוואטסאפ)</label>
+            <input type="text" id="clientPhone" placeholder="9725XXXXXXXX או 05XXXXXXXX">
+
+            <label>תיאור הפרויקט</label>
+            <input type="text" id="projectName" placeholder="לדוגמה: ארון מטבח + איי">
+
+            <label>סוג חומר</label>
+            <select id="materialSelect"></select>
+
+            <label>שטח חומר משוער (מ״ר)</label>
+            <input type="number" step="0.01" id="materialArea" min="0" placeholder="0">
+            <button class="link" onclick="copyAreaFromCutlist()">📋 קח שטח מדוח החיתוך</button>
+            <div class="hint" id="cutlistAreaRefHint"></div>
+
+            <div class="row2">
+              <div>
+                <label>עלות פרזול (ידיות, צירים וכו׳)</label>
+                <input type="number" id="hardwareCost" min="0" placeholder="0">
+              </div>
+              <div></div>
+            </div>
+
+            <label>פירוק שעות עבודה לפי שלב</label>
+            <div id="workStagesList"></div>
+            <button class="link" onclick="addWorkStageRow()">+ הוסף שלב עבודה</button>
+            <div class="hint" id="totalHoursHint"></div>
+
+            <label>הערות להצעה (אופציונלי)</label>
+            <textarea id="notes" placeholder="לדוגמה: זמן אספקה 14 יום, כולל התקנה"></textarea>
+
+            <div class="actions-row">
+              <button class="primary" onclick="saveQuote()">שמור הזמנה</button>
+              <button class="secondary" onclick="window.print()">הדפס הצעה / שמור כ-PDF</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel quote-paper" id="quotePreviewPanel">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: CUT LIST (production planning, separate from pricing) -->
+    <section id="tab-cutlist" style="display:none;">
+      <div class="panel no-print">
+        <h2>פירוק מידות לעבודה — דוח חיתוך מלא</h2>
+        <div class="panel-body">
+          <div class="hint" style="margin-top:0;margin-bottom:14px;">כלי תכנון ייצור נפרד מהצעת המחיר — לא משפיע על המחיר ללקוח אוטומטית. אם תרצה, תוכל להעתיק את השטח המחושב כאן חזרה לטופס ההצעה.</div>
+
+          <div id="aiBox" class="ai-box">
+            <div class="ai-box-head">📷 העלה תמונה — AI יבנה פירוק מלא לרשימת חלקים לחיתוך</div>
+            <input type="file" id="aiImageInput" accept="image/*" capture="environment">
+            <div id="aiImgPreviewWrap"></div>
+            <button class="secondary" id="aiAnalyzeBtn" onclick="analyzeWithAI()" disabled>נתח תמונה עם AI</button>
+            <div id="aiStatus" class="ai-status"></div>
+            <div id="aiResultBox" class="ai-result" style="display:none;"></div>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label>גובה צוקל/רגליים לפרויקט זה (מ״מ)</label>
+              <input type="number" id="projectPlinthHeight" min="0">
+            </div>
+            <div>
+              <label>עומק הארון (ס״מ) — לרפרנס בלבד</label>
+              <input type="number" id="projectDepth" min="0">
+            </div>
+          </div>
+          <div class="hint">גובה הארון עצמו (ללא הצוקל) = גובה כולל פחות גובה הצוקל. שדות אלו מוזנים ל-AI אם תשתמש בניתוח תמונה, ומופיעים בראש דוח החיתוך.</div>
+
+          <label style="margin-top:18px;">רשימת חלקים לחיתוך</label>
+          <div id="partsList"></div>
+          <button class="link" onclick="addPartRow()">+ הוסף חלק</button>
+          <div class="cutlist-summary" id="cutlistSummary"></div>
+
+          <label style="margin-top:18px;">רשימת פרזול נדרש</label>
+          <div id="hardwareItemsList"></div>
+          <button class="link" onclick="addHardwareItemRow()">+ הוסף פריט פרזול</button>
+
+          <div class="actions-row">
+            <button class="primary" onclick="printCutList()">🪚 הצג / הדפס דוח חיתוך מלא</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ORDERS -->
+    <section id="tab-orders" style="display:none;">
+      <div class="panel">
+        <h2>כל ההזמנות וההצעות</h2>
+        <div class="panel-body" id="ordersList">
+          <div class="empty-state">טוען...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: SETTINGS -->
+    <section id="tab-settings" style="display:none;">
+      <div class="panel">
+        <h2>הגדרות עסק ומחירון</h2>
+        <div class="panel-body">
+
+          <label>שם העסק</label>
+          <input type="text" id="setBizName" placeholder="נגרות דוד / Al Noor Carpentry">
+
+          <label>טלפון / וואטסאפ להצגה בהצעה</label>
+          <input type="text" id="setBizPhone" placeholder="05X-XXXXXXX">
+
+          <div class="row2">
+            <div>
+              <label>תעריף שעת עבודה (₪)</label>
+              <input type="number" id="setLaborRate" min="0">
+              <label class="checkbox-label"><input type="checkbox" id="setShowLabor"> הצג פירוט עבודה ללקוח בהצעה</label>
+            </div>
+            <div>
+              <label>אחוז רווח + הוצאות תקורה (%)</label>
+              <input type="number" id="setOverhead" min="0">
+              <label class="checkbox-label"><input type="checkbox" id="setShowOverhead"> הצג שורת רווח+תקורה ללקוח בהצעה</label>
+            </div>
+          </div>
+          <div class="hint">גם כשמוסתר, הסכום עדיין מחושב וכלול בסה״כ — זה משפיע רק על מה שהלקוח רואה בהצעה המודפסת.</div>
+
+          <div class="row2">
+            <div>
+              <label>מע״מ / VAT (%)</label>
+              <input type="number" id="setVat" min="0">
+            </div>
+            <div>
+              <label>אחוז בזבוז חיתוך (%)</label>
+              <input type="number" step="0.1" id="setWastePct" min="0">
+            </div>
+          </div>
+          <div class="hint">אחוז בזבוז חיתוך: משמש להערכת כמות הפלטות הנדרשות בדוח החיתוך (לא משפיע יותר אוטומטית על הצעת המחיר — שם השטח מוזן ידנית).</div>
+
+          <label style="margin-top:18px;">הגדרות ייצור — לדוח החיתוך</label>
+          <div class="row2">
+            <div>
+              <label>גודל פלטה סטנדרטי — רוחב (ס״מ)</label>
+              <input type="number" id="setSheetWidth" min="0">
+            </div>
+            <div>
+              <label>גודל פלטה סטנדרטי — אורך (ס״מ)</label>
+              <input type="number" id="setSheetLength" min="0">
+            </div>
+          </div>
+          <div class="hint">ברירת מחדל בישראל: 122×244 ס״מ. שנה אם אתה עובד עם ספק שמספק גדלים אחרים.</div>
+
+          <div class="row2">
+            <div>
+              <label>עובי לוח ראשי (מ״מ)</label>
+              <input type="number" step="0.1" id="setBoardThickness" min="0">
+            </div>
+            <div>
+              <label>עובי לוח גב (מ״מ)</label>
+              <input type="number" step="0.1" id="setBackThickness" min="0">
+            </div>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label>קיצוץ יישור לכל צד (מ״מ)</label>
+              <input type="number" step="0.1" id="setTrimAllowance" min="0">
+            </div>
+            <div>
+              <label>גובה צוקל/רגליים ברירת מחדל (מ״מ)</label>
+              <input type="number" id="setPlinthHeight" min="0">
+            </div>
+          </div>
+          <div class="hint">קיצוץ יישור: כמה מ״מ יורדים מכל צד של פלטה גולמית כדי ליישר אותה לפני חיתוך מדויק — משפיע על חישוב מספר הפלטות הנדרש.</div>
+
+          <label>עובי קנט (מ״מ) — לדוח החיתוך</label>
+          <input type="number" step="0.1" id="setEdgeThickness" min="0">
+          <div class="hint">משמש לתווית "1X / 2X (עובי X)" בדוח החיתוך. אם אתה עובד עם כמה עוביים שונים לחלקים שונים, ציין זאת בשדה ההערות של כל חלק.</div>
+
+          <label style="margin-top:22px;">סוגי חומרים ומחיר למ״ר (₪)</label>
+          <div id="materialsSettingsList"></div>
+          <button class="link" onclick="addMaterialRow()">+ הוספת סוג חומר</button>
+
+          <div class="actions-row">
+            <button class="primary" onclick="saveSettings()">שמור הגדרות</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay no-print" id="cutlistModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeCutlistModal()">×</button>
+    <div id="cutlistPrintView" class="cutlist-print" style="display:block;"></div>
+    <div class="modal-actions no-print">
+      <button class="primary" onclick="triggerCutlistPrint()">הדפס / שמור כ-PDF</button>
+      <button class="secondary" onclick="closeCutlistModal()">סגור</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG — fill these in with your own project values
+// (Settings > API in your Supabase dashboard). The anon key is
+// safe to expose in client-side code by design — access control
+// is enforced by Row Level Security policies on the table, not
+// by hiding this key. See README.md for setup steps.
+// ============================================================
+const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+const supabaseClient = (SUPABASE_URL.startsWith('http'))
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// Drop-in replacement for the Claude-artifact-only window.storage API,
+// backed by a single Supabase table (see supabase-schema.sql).
+const dbStorage = {
+  async get(key){
+    if(!supabaseClient) throw new Error('Supabase not configured — see README.md');
+    const { data, error } = await supabaseClient.from('app_data').select('value').eq('id', key).maybeSingle();
+    if(error) throw error;
+    return data ? { key, value: data.value } : null;
+  },
+  async set(key, value){
+    if(!supabaseClient) throw new Error('Supabase not configured — see README.md');
+    const { error } = await supabaseClient.from('app_data').upsert({ id: key, value, updated_at: new Date().toISOString() });
+    if(error) throw error;
+    return { key, value };
+  }
+};
+
+let settings = null;
+let quotes = [];
+let editingMaterialsDraft = [];
+
+const DEFAULT_SETTINGS = {
+  bizName: "",
+  bizPhone: "",
+  laborRate: 60,
+  overheadPct: 30,
+  vatPct: 18,
+  wastePct: 10,
+  edgeThicknessMm: 1.3,
+  sheetWidthCm: 122,
+  sheetLengthCm: 244,
+  boardThicknessMm: 18,
+  backThicknessMm: 8,
+  trimAllowanceMm: 3,
+  plinthHeightMm: 100,
+  showLaborInQuote: true,
+  showOverheadInQuote: false,
+  materials: [
+    {id: "m1", name: "MDF לבן", price: 90},
+    {id: "m2", name: "פורניר אלון", price: 180},
+    {id: "m3", name: "עץ מלא", price: 260}
+  ]
+};
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ---------- storage ----------
+async function loadSettings(){
+  try{
+    const res = await dbStorage.get('settings');
+    settings = res ? JSON.parse(res.value) : structuredCloneSafe(DEFAULT_SETTINGS);
+  }catch(e){
+    settings = structuredCloneSafe(DEFAULT_SETTINGS);
+  }
+  if(!settings.materials || !settings.materials.length){
+    settings.materials = structuredCloneSafe(DEFAULT_SETTINGS.materials);
+  }
+  if(typeof settings.showLaborInQuote !== 'boolean') settings.showLaborInQuote = true;
+  if(typeof settings.showOverheadInQuote !== 'boolean') settings.showOverheadInQuote = false;
+  if(typeof settings.wastePct !== 'number') settings.wastePct = DEFAULT_SETTINGS.wastePct;
+  if(typeof settings.edgeThicknessMm !== 'number') settings.edgeThicknessMm = DEFAULT_SETTINGS.edgeThicknessMm;
+  if(typeof settings.sheetWidthCm !== 'number') settings.sheetWidthCm = DEFAULT_SETTINGS.sheetWidthCm;
+  if(typeof settings.sheetLengthCm !== 'number') settings.sheetLengthCm = DEFAULT_SETTINGS.sheetLengthCm;
+  if(typeof settings.boardThicknessMm !== 'number') settings.boardThicknessMm = DEFAULT_SETTINGS.boardThicknessMm;
+  if(typeof settings.backThicknessMm !== 'number') settings.backThicknessMm = DEFAULT_SETTINGS.backThicknessMm;
+  if(typeof settings.trimAllowanceMm !== 'number') settings.trimAllowanceMm = DEFAULT_SETTINGS.trimAllowanceMm;
+  if(typeof settings.plinthHeightMm !== 'number') settings.plinthHeightMm = DEFAULT_SETTINGS.plinthHeightMm;
+}
+
+async function persistSettings(){
+  try{
+    await dbStorage.set('settings', JSON.stringify(settings));
+  }catch(e){
+    showToast('שגיאה בשמירת הגדרות');
+  }
+}
+
+async function loadQuotes(){
+  try{
+    const res = await dbStorage.get('quotes');
+    quotes = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    quotes = [];
+  }
+}
+
+async function persistQuotes(){
+  try{
+    await dbStorage.set('quotes', JSON.stringify(quotes));
+  }catch(e){
+    showToast('שגיאה בשמירת ההזמנה');
+  }
+}
+
+function structuredCloneSafe(o){ return JSON.parse(JSON.stringify(o)); }
+
+// ---------- tabs ----------
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    ['quote','cutlist','orders','settings'].forEach(t=>{
+      document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab)?'block':'none';
+    });
+    if(btn.dataset.tab==='orders') renderOrders();
+    if(btn.dataset.tab==='settings') renderSettingsForm();
+    if(btn.dataset.tab==='cutlist') renderCutlistSummary();
+    if(btn.dataset.tab==='quote') renderCutlistAreaRefHint();
+  });
+});
+
+// ---------- header ----------
+function renderHeader(){
+  document.getElementById('bizTitle').textContent = settings.bizName ? settings.bizName : 'מחשבון הצעות מחיר לנגרות';
+  document.getElementById('bizSubtitle').textContent = settings.bizName
+    ? 'מחשבון תמחור פנימי — לא מוצג ללקוח'
+    : 'הגדר את שם העסק שלך בטאב "הגדרות מחירון"';
+}
+
+// ---------- material select ----------
+function renderMaterialSelect(){
+  const sel = document.getElementById('materialSelect');
+  sel.innerHTML = '';
+  settings.materials.forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name + ' — ₪' + m.price + ' / מ״ר';
+    sel.appendChild(opt);
+  });
+}
+
+// ---------- work stages (פירוק עבודה) ----------
+let workStages = [{id: uid(), name: '', hours: ''}];
+
+function renderWorkStagesList(){
+  const wrap = document.getElementById('workStagesList');
+  wrap.innerHTML = workStages.map((s,i)=>`
+    <div class="stage-row">
+      <input type="text" placeholder="לדוגמה: חיתוך, הרכבה, גימור, התקנה" value="${escapeHtml(s.name)}" data-idx="${i}" data-field="name">
+      <input type="number" placeholder="שעות" min="0" value="${s.hours}" data-idx="${i}" data-field="hours">
+      <button class="stage-remove" data-idx="${i}" title="הסר שלב">×</button>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      const f = e.target.dataset.field;
+      workStages[i][f] = f==='hours' ? e.target.value : e.target.value;
+      renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.stage-remove').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      workStages.splice(i,1);
+      if(!workStages.length) workStages.push({id: uid(), name:'', hours:''});
+      renderWorkStagesList();
+      renderPreview();
+    });
+  });
+}
+
+function addWorkStageRow(){
+  workStages.push({id: uid(), name:'', hours:''});
+  renderWorkStagesList();
+}
+
+function resetWorkStages(){
+  workStages = [{id: uid(), name:'', hours:''}];
+  renderWorkStagesList();
+}
+
+function getTotalHours(){
+  return workStages.reduce((s,st)=>s+(parseFloat(st.hours)||0), 0);
+}
+
+// ---------- parts list (פירוק מידות לעבודה / cut list) ----------
+function blankPart(){
+  return {id: uid(), name:'', length:'', width:'', thickness: settings ? settings.boardThicknessMm : 18, qty:'1', edgeLength:'none', edgeWidth:'none', note:''};
+}
+let parts = [blankPart()];
+let hardwareItems = [{id: uid(), name: '', qty: '1'}];
+
+const EDGE_LABELS = {none:'ללא', '1x':'1X', '2x':'2X'};
+
+function partExceedsSheet(p){
+  const l = parseFloat(p.length)||0, w = parseFloat(p.width)||0;
+  if(!l || !w) return false;
+  const sheetW = settings.sheetWidthCm*10, sheetL = settings.sheetLengthCm*10;
+  const fitsDirect = l<=sheetL && w<=sheetW;
+  const fitsRotated = l<=sheetW && w<=sheetL;
+  return !fitsDirect && !fitsRotated;
+}
+
+function renderPartsList(){
+  const wrap = document.getElementById('partsList');
+  wrap.innerHTML = parts.map((p,i)=>{
+    const warn = partExceedsSheet(p);
+    return `
+    <div class="part-card${warn?' part-warn':''}">
+      <div class="part-row">
+        <input type="text" placeholder="שם החלק — לדוגמה: דופן שמאל" value="${escapeHtml(p.name)}" data-idx="${i}" data-field="name" class="part-name">
+        <button class="part-remove" data-idx="${i}" title="הסר חלק">×</button>
+      </div>
+      <div class="part-row-dims">
+        <div><span class="mini-lbl">אורך (מ״מ)</span><input type="number" min="0" value="${p.length}" data-idx="${i}" data-field="length"></div>
+        <div><span class="mini-lbl">רוחב (מ״מ)</span><input type="number" min="0" value="${p.width}" data-idx="${i}" data-field="width"></div>
+        <div><span class="mini-lbl">עובי (מ״מ)</span><input type="number" step="0.1" min="0" value="${p.thickness}" data-idx="${i}" data-field="thickness"></div>
+        <div><span class="mini-lbl">כמות</span><input type="number" min="0" value="${p.qty}" data-idx="${i}" data-field="qty"></div>
+      </div>
+      <div class="part-row-edges">
+        <div><span class="mini-lbl">קנט באורך</span>
+          <select data-idx="${i}" data-field="edgeLength">
+            <option value="none" ${p.edgeLength==='none'?'selected':''}>ללא</option>
+            <option value="1x" ${p.edgeLength==='1x'?'selected':''}>1X (צד אחד)</option>
+            <option value="2x" ${p.edgeLength==='2x'?'selected':''}>2X (שני צדדים)</option>
+          </select>
+        </div>
+        <div><span class="mini-lbl">קנט ברוחב</span>
+          <select data-idx="${i}" data-field="edgeWidth">
+            <option value="none" ${p.edgeWidth==='none'?'selected':''}>ללא</option>
+            <option value="1x" ${p.edgeWidth==='1x'?'selected':''}>1X (צד אחד)</option>
+            <option value="2x" ${p.edgeWidth==='2x'?'selected':''}>2X (שני צדדים)</option>
+          </select>
+        </div>
+      </div>
+      <input type="text" placeholder="הערות לנגר (לדוגמה: חזית בלבד, קיצור לעומק)" value="${escapeHtml(p.note)}" data-idx="${i}" data-field="note" class="part-note">
+      ${warn ? `<div class="part-warn-text">⚠ החלק גדול מפלטה סטנדרטית (${settings.sheetWidthCm}×${settings.sheetLengthCm} ס״מ) — יש לחבר משתי פלטות או לצמצם</div>` : ''}
+    </div>
+  `;}).join('');
+  wrap.querySelectorAll('input, select').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      const f = e.target.dataset.field;
+      parts[i][f] = e.target.value;
+      renderPartsList();
+      renderPreview();
+      renderCutlistSummary();
+    });
+  });
+  wrap.querySelectorAll('.part-remove').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      parts.splice(i,1);
+      if(!parts.length) parts.push(blankPart());
+      renderPartsList();
+      renderPreview();
+      renderCutlistSummary();
+    });
+  });
+}
+
+function addPartRow(){
+  parts.push(blankPart());
+  renderPartsList();
+}
+
+function resetParts(){
+  parts = [blankPart()];
+  renderPartsList();
+}
+
+function getValidParts(){
+  return parts.filter(p=>p.name.trim() && (parseFloat(p.length)||0)>0 && (parseFloat(p.width)||0)>0);
+}
+
+function getRawAreaM2(){
+  return getValidParts().reduce((sum,p)=>{
+    const qty = parseFloat(p.qty)||1;
+    return sum + (parseFloat(p.length)||0) * (parseFloat(p.width)||0) / 1000000 * qty;
+  }, 0);
+}
+
+function renderCutlistSummary(){
+  const el = document.getElementById('cutlistSummary');
+  if(!el) return;
+  const validParts = getValidParts();
+  const rawArea = getRawAreaM2();
+  const withWaste = rawArea * (1 + settings.wastePct/100);
+  const sheetUsableM2 = ((settings.sheetWidthCm - 2*settings.trimAllowanceMm/10) * (settings.sheetLengthCm - 2*settings.trimAllowanceMm/10)) / 10000;
+  const sheetsNeeded = sheetUsableM2>0 ? Math.ceil(withWaste / sheetUsableM2) : 0;
+  const warnings = parts.filter(partExceedsSheet).length;
+  el.innerHTML = `
+    <div class="cl-summary-row"><span>חלקים תקינים</span><b>${validParts.length}</b></div>
+    <div class="cl-summary-row"><span>שטח חיתוך כולל</span><b>${rawArea.toFixed(2)} מ״ר</b></div>
+    <div class="cl-summary-row"><span>כולל ${settings.wastePct}% בזבוז</span><b>${withWaste.toFixed(2)} מ״ר</b></div>
+    <div class="cl-summary-row"><span>פלטות נדרשות (הערכה)</span><b>${sheetsNeeded} × ${settings.sheetWidthCm}×${settings.sheetLengthCm} ס״מ</b></div>
+    ${warnings>0 ? `<div class="cl-summary-row" style="color:var(--danger);"><span>⚠ חלקים חורגים מגודל פלטה</span><b>${warnings}</b></div>` : ''}
+  `;
+}
+
+// ---------- hardware items list (רשימת פרזול) ----------
+function renderHardwareItemsList(){
+  const wrap = document.getElementById('hardwareItemsList');
+  wrap.innerHTML = hardwareItems.map((h,i)=>`
+    <div class="stage-row">
+      <input type="text" placeholder="לדוגמה: צירים, ידיות, מסילות" value="${escapeHtml(h.name)}" data-idx="${i}" data-field="name">
+      <input type="number" placeholder="כמות" min="0" value="${h.qty}" data-idx="${i}" data-field="qty">
+      <button class="stage-remove" data-idx="${i}" title="הסר">×</button>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      const f = e.target.dataset.field;
+      hardwareItems[i][f] = e.target.value;
+    });
+  });
+  wrap.querySelectorAll('.stage-remove').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      hardwareItems.splice(i,1);
+      if(!hardwareItems.length) hardwareItems.push({id: uid(), name:'', qty:'1'});
+      renderHardwareItemsList();
+    });
+  });
+}
+
+function addHardwareItemRow(){
+  hardwareItems.push({id: uid(), name:'', qty:'1'});
+  renderHardwareItemsList();
+}
+
+function resetHardwareItems(){
+  hardwareItems = [{id: uid(), name:'', qty:'1'}];
+  renderHardwareItemsList();
+}
+
+function getValidHardwareItems(){
+  return hardwareItems.filter(h=>h.name.trim() && (parseFloat(h.qty)||0)>0);
+}
+
+function edgeLabel(part){
+  const t = settings.edgeThicknessMm;
+  const l = part.edgeLength==='none' ? 'ללא' : `${EDGE_LABELS[part.edgeLength]} (עובי ${t})`;
+  const w = part.edgeWidth==='none' ? 'ללא' : `${EDGE_LABELS[part.edgeWidth]} (עובי ${t})`;
+  return {l, w};
+}
+
+function printCutList(){
+  const validParts = getValidParts();
+  if(!validParts.length){ showToast('הוסף לפחות חלק אחד תקין'); return; }
+  const projectName = document.getElementById('projectName').value || 'פרויקט ללא שם';
+  const clientName = document.getElementById('clientName').value || '—';
+  const matId = document.getElementById('materialSelect').value;
+  const material = settings.materials.find(m=>m.id===matId);
+  const validHardware = getValidHardwareItems();
+  const plinthH = document.getElementById('projectPlinthHeight').value || settings.plinthHeightMm;
+  const depth = document.getElementById('projectDepth').value;
+  const rawArea = getRawAreaM2();
+  const withWaste = rawArea * (1 + settings.wastePct/100);
+  const sheetUsableM2 = ((settings.sheetWidthCm - 2*settings.trimAllowanceMm/10) * (settings.sheetLengthCm - 2*settings.trimAllowanceMm/10)) / 10000;
+  const sheetsNeeded = sheetUsableM2>0 ? Math.ceil(withWaste / sheetUsableM2) : 0;
+
+  const rows = validParts.map(p=>{
+    const e = edgeLabel(p);
+    const warn = partExceedsSheet(p);
+    return `
+    <tr${warn?' style="background:#FBEAE6;"':''}>
+      <td>${escapeHtml(p.name)}${warn?' ⚠':''}</td>
+      <td>${p.qty||1}</td>
+      <td>${p.length}</td>
+      <td>${p.width}</td>
+      <td>${p.thickness||settings.boardThicknessMm}</td>
+      <td>${e.l}</td>
+      <td>${e.w}</td>
+      <td>${escapeHtml(p.note||'')}${warn?' — חורג מפלטה סטנדרטית, נדרש חיבור':''}</td>
+    </tr>`;
+  }).join('');
+
+  const hardwareRows = validHardware.map(h=>`
+    <tr><td>${escapeHtml(h.name)}</td><td>${h.qty||1}</td></tr>
+  `).join('');
+
+  const hardwareTable = validHardware.length ? `
+    <h2>פרזול נדרש</h2>
+    <table><thead><tr><th>פריט</th><th>כמות</th></tr></thead><tbody>${hardwareRows}</tbody></table>
+  ` : '';
+
+  document.getElementById('cutlistPrintView').innerHTML = `
+    <h1>🪚 דוח חיתוך מלא — לשימוש פנימי בנגריה</h1>
+    <div class="cl-sub">${escapeHtml(projectName)} · לקוח: ${escapeHtml(clientName)} · חומר: ${material?escapeHtml(material.name):'—'} · ${new Date().toLocaleDateString('he-IL')}</div>
+    <div class="cl-meta-box">
+      <div><span>פלטה סטנדרטית</span><b>${settings.sheetWidthCm}×${settings.sheetLengthCm} ס״מ</b></div>
+      <div><span>עובי לוח ראשי</span><b>${settings.boardThicknessMm} מ״מ</b></div>
+      <div><span>עובי לוח גב</span><b>${settings.backThicknessMm} מ״מ</b></div>
+      <div><span>גובה צוקל/רגליים</span><b>${plinthH} מ״מ</b></div>
+      ${depth ? `<div><span>עומק (רפרנס)</span><b>${depth} ס״מ</b></div>` : ''}
+      <div><span>שטח חיתוך כולל</span><b>${rawArea.toFixed(2)} מ״ר</b></div>
+      <div><span>פלטות נדרשות (הערכה, כולל ${settings.wastePct}% בזבוז)</span><b>${sheetsNeeded}</b></div>
+    </div>
+    <table><thead><tr><th>שם החלק</th><th>כמות</th><th>אורך (מ״מ)</th><th>רוחב (מ״מ)</th><th>עובי (מ״מ)</th><th>קנט באורך</th><th>קנט ברוחב</th><th>הערות לנגר</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    ${hardwareTable}
+    <div class="cl-note">מסמך זה לשימוש פנימי בלבד — אינו מיועד ללקוח. הערכת מספר פלטות היא חישוב שטחי בסיסי, לא סידור חיתוך (nesting) אמיתי — ייתכן שבפועל יידרש מעט יותר.</div>
+  `;
+  document.getElementById('cutlistModal').classList.add('open');
+}
+
+function closeCutlistModal(){
+  document.getElementById('cutlistModal').classList.remove('open');
+  document.body.classList.remove('printing-cutlist');
+}
+
+function triggerCutlistPrint(){
+  document.body.classList.add('printing-cutlist');
+  try{
+    window.print();
+  }catch(e){
+    showToast('ההדפסה לא זמינה כאן — פתח את הקובץ בדפדפן כדי להדפיס');
+  }
+  setTimeout(()=>document.body.classList.remove('printing-cutlist'), 2000);
+}
+
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('printing-cutlist');
+});
+
+// ---------- calculation ----------
+function calcQuote(){
+  const matId = document.getElementById('materialSelect').value;
+  const material = settings.materials.find(m=>m.id===matId) || settings.materials[0];
+  const hardware = parseFloat(document.getElementById('hardwareCost').value) || 0;
+  const hours = getTotalHours();
+
+  const areaM2 = parseFloat(document.getElementById('materialArea').value) || 0;
+  const materialCost = areaM2 * (material ? material.price : 0);
+  const laborCost = hours * settings.laborRate;
+  const subtotal = materialCost + hardware + laborCost;
+  const overheadAmount = subtotal * (settings.overheadPct/100);
+  const preVat = subtotal + overheadAmount;
+  const vatAmount = preVat * (settings.vatPct/100);
+  const total = preVat + vatAmount;
+
+  return {material, areaM2, materialCost, hardware, laborCost, hours, subtotal, overheadAmount, preVat, vatAmount, total};
+}
+
+function copyAreaFromCutlist(){
+  const raw = getRawAreaM2();
+  if(raw<=0){ showToast('אין עדיין חלקים תקינים בדוח החיתוך'); return; }
+  document.getElementById('materialArea').value = raw.toFixed(2);
+  renderPreview();
+  showToast('השטח הועתק מדוח החיתוך ✓');
+}
+
+function renderCutlistAreaRefHint(){
+  const el = document.getElementById('cutlistAreaRefHint');
+  if(!el) return;
+  const raw = getRawAreaM2();
+  el.textContent = raw>0
+    ? `שטח לפי דוח החיתוך הנוכחי: ${raw.toFixed(2)} מ״ר (לא מוזן אוטומטית — לחץ על הכפתור כדי להעתיק)`
+    : 'עדיין אין חלקים בדוח החיתוך — עבור לטאב "פירוק לעבודה" כדי לבנות אותו';
+}
+
+function renderPreview(){
+  const c = calcQuote();
+  const clientName = document.getElementById('clientName').value || '—';
+  const projectName = document.getElementById('projectName').value || 'פרויקט ללא שם';
+  const notes = document.getElementById('notes').value;
+  const today = new Date().toLocaleDateString('he-IL');
+  const validParts = getValidParts();
+
+  const stageLines = settings.showLaborInQuote
+    ? workStages.filter(s=>s.name.trim() && parseFloat(s.hours)>0).map(s=>
+        `<div class="qline"><span class="lbl">${escapeHtml(s.name)} (${s.hours} שעות)</span><span class="val">₪${fmt((parseFloat(s.hours)||0)*settings.laborRate)}</span></div>`
+      ).join('')
+    : '';
+
+  const laborLine = settings.showLaborInQuote
+    ? (stageLines || `<div class="qline"><span class="lbl">עבודה (${c.hours||0} שעות)</span><span class="val">₪${fmt(c.laborCost)}</span></div>`)
+    : '';
+
+  const overheadLine = settings.showOverheadInQuote
+    ? `<div class="qline"><span class="lbl">רווח + תקורה (${settings.overheadPct}%)</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>`
+    : '';
+
+  const panel = document.getElementById('quotePreviewPanel');
+  panel.innerHTML = `
+    <div class="quote-head">
+      <div class="biz-name">${escapeHtml(settings.bizName || 'שם העסק שלך')}</div>
+      <div class="biz-sub">${escapeHtml(settings.bizPhone || 'הוסף טלפון בהגדרות')} · הצעת מחיר · ${today}</div>
+    </div>
+    <div class="quote-meta">
+      <div><span class="k">לקוח</span><span>${escapeHtml(clientName)}</span></div>
+      <div><span class="k">פרויקט</span><span>${escapeHtml(projectName)}</span></div>
+      <div><span class="k">חלקים</span><span>${validParts.length || 0}</span></div>
+      <div><span class="k">חומר</span><span>${c.material?escapeHtml(c.material.name):'—'}</span></div>
+    </div>
+    <div class="quote-lines">
+      <div class="qline"><span class="lbl">חומר (${c.areaM2.toFixed(2)} מ״ר)</span><span class="val">₪${fmt(c.materialCost)}</span></div>
+      <div class="qline"><span class="lbl">פרזול</span><span class="val">₪${fmt(c.hardware)}</span></div>
+      ${laborLine}
+      ${overheadLine}
+      <div class="qline"><span class="lbl">מע״מ (${settings.vatPct}%)</span><span class="val">₪${fmt(c.vatAmount)}</span></div>
+      ${notes ? `<div class="qline" style="border:none;"><span class="lbl">הערות</span><span class="val" style="font-weight:400;">${escapeHtml(notes)}</span></div>` : ''}
+    </div>
+    <div class="qtotal"><span>סה״כ לתשלום</span><span>₪${fmt(c.total)}</span></div>
+  `;
+}
+
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString('he-IL'); }
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+['clientName','projectName','materialSelect','hardwareCost','notes'].forEach(id=>{
+  document.addEventListener('input', (e)=>{ if(e.target.id===id) renderPreview(); });
+  document.addEventListener('change', (e)=>{ if(e.target.id===id) renderPreview(); });
+});
+
+// ---------- AI image analysis ----------
+let aiImageBase64 = null;
+let aiImageMediaType = null;
+let aiLastResult = null;
+
+document.getElementById('aiImageInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  aiImageMediaType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = () => {
+    aiImageBase64 = reader.result.split(',')[1];
+    document.getElementById('aiImgPreviewWrap').innerHTML = `<img src="${reader.result}">`;
+    document.getElementById('aiAnalyzeBtn').disabled = false;
+    document.getElementById('aiStatus').textContent = '';
+    document.getElementById('aiResultBox').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---------- AI quick area estimate (quote tab) ----------
+let aiQImageBase64 = null;
+let aiQImageMediaType = null;
+let aiQLastResult = null;
+
+document.getElementById('aiImageInputQ').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  aiQImageMediaType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = () => {
+    aiQImageBase64 = reader.result.split(',')[1];
+    document.getElementById('aiImgPreviewWrapQ').innerHTML = `<img src="${reader.result}">`;
+    document.getElementById('aiAnalyzeBtnQ').disabled = false;
+    document.getElementById('aiStatusQ').textContent = '';
+    document.getElementById('aiResultBoxQ').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+async function analyzeWithAIQuote(){
+  if(!aiQImageBase64) return;
+  const btn = document.getElementById('aiAnalyzeBtnQ');
+  const statusEl = document.getElementById('aiStatusQ');
+  btn.disabled = true;
+  statusEl.textContent = '🔎 מעריך שטח חומר... (כמה שניות)';
+
+  const materialsList = settings.materials.map(m=>m.name).join(', ');
+  const prompt = `אתה נגר מומחה שנותן הערכה מהירה וגסה לצורך הצעת מחיר ראשונית ללקוח (לא דוח חיתוך מפורט).
+
+בהינתן התמונה של הרהיט/החלל:
+1. הערך מידות חיצוניות כוללות (רוחב, גובה, עומק בס״מ) — השתמש באלמנטים מוכרים בתמונה (ידיות דלת, גובה שיש מטבח סטנדרטי ~90 ס״מ וכו') לכיול קנה המידה.
+2. תן הערכה גסה וכוללת של סך שטח החומר הדרוש בפועל (מ״ר) לכל הפרויקט (דפנות, מדפים, דלתות, גב וכו' יחד) — מספר אחד כולל, לא פירוק לחלקים.
+
+החזר אך ורק JSON תקין (בלי טקסט נוסף, בלי מרקדאון) במבנה:
+{
+  "item_description": "תיאור קצר (בעברית)",
+  "estimated_overall_width_cm": מספר,
+  "estimated_overall_height_cm": מספר,
+  "estimated_overall_depth_cm": מספר,
+  "estimated_material_area_m2": מספר (שטח חומר כולל משוער, מ״ר),
+  "suggested_material": "אחד מהאופציות הבאות בלבד אם רלוונטי: ${materialsList}",
+  "confidence": "low" | "medium" | "high",
+  "notes": "הערה קצרה אם רלוונטי"
+}
+חשוב: זו הערכה גסה להצעת מחיר בלבד, לא מדידה מדויקת ולא תחליף לפירוק חלקים מלא.`;
+
+  try{
+    const response = await fetch("/api/claude", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 800,
+        messages: [{
+          role: "user",
+          content: [
+            {type: "image", source: {type: "base64", media_type: aiQImageMediaType, data: aiQImageBase64}},
+            {type: "text", text: prompt}
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const textBlocks = (data.content || []).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const cleaned = textBlocks.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(cleaned);
+    aiQLastResult = result;
+    renderAiQuoteResult(result);
+    statusEl.textContent = '✓ הערכה הושלמה — בדוק ואשר';
+  }catch(err){
+    statusEl.textContent = '⚠ הניתוח נכשל. נסה שוב או המשך למלא ידנית.';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function renderAiQuoteResult(r){
+  const box = document.getElementById('aiResultBoxQ');
+  const confLabel = {low:'נמוכה', medium:'בינונית', high:'גבוהה'}[r.confidence] || r.confidence;
+  box.innerHTML = `
+    <div class="warn">⚠ הערכה גסה בלבד — לתמחור ראשוני. לא תחליף פירוק מדויק.</div>
+    <div class="field"><span>תיאור</span><b>${escapeHtml(r.item_description||'—')}</b></div>
+    <div class="field"><span>מידות חיצוניות</span><b>${r.estimated_overall_width_cm||'—'}×${r.estimated_overall_height_cm||'—'}×${r.estimated_overall_depth_cm||'—'} ס״מ</b></div>
+    <div class="field"><span>שטח חומר משוער</span><b>${r.estimated_material_area_m2||'—'} מ״ר</b></div>
+    <div class="field"><span>חומר מוצע</span><b>${escapeHtml(r.suggested_material||'—')}</b></div>
+    <div class="field"><span>רמת ביטחון</span><b>${confLabel}</b></div>
+    ${r.notes?`<div class="field" style="display:block;margin-top:6px;"><span>הערת AI: </span>${escapeHtml(r.notes)}</div>`:''}
+    <button class="primary" onclick="applyAiQuoteResult()">מלא בהצעת המחיר</button>
+  `;
+  box.style.display = 'block';
+}
+
+function applyAiQuoteResult(){
+  if(!aiQLastResult) return;
+  const r = aiQLastResult;
+  if(r.estimated_material_area_m2){
+    document.getElementById('materialArea').value = Math.round(r.estimated_material_area_m2*100)/100;
+  }
+  if(r.suggested_material){
+    const match = settings.materials.find(m=>m.name===r.suggested_material);
+    if(match) document.getElementById('materialSelect').value = match.id;
+  }
+  if(!document.getElementById('projectName').value && r.item_description){
+    document.getElementById('projectName').value = r.item_description;
+  }
+  renderPreview();
+  showToast('השטח מולא בהצעת המחיר — בדוק ותקן לפי הצורך');
+}
+
+async function analyzeWithAI(){
+  if(!aiImageBase64) return;
+  const btn = document.getElementById('aiAnalyzeBtn');
+  const statusEl = document.getElementById('aiStatus');
+  btn.disabled = true;
+  statusEl.textContent = '🔎 מנתח את התמונה ובונה פירוק חלקים... (כמה שניות)';
+
+  const materialsList = settings.materials.map(m=>m.name).join(', ');
+  const sheetW = settings.sheetWidthCm*10, sheetL = settings.sheetLengthCm*10;
+  const prompt = `אתה נגר מומחה ומנוסה שמעריך פרויקט מתמונה ובונה עבורו רשימת חיתוך (פירוק מידות לעבודה) לפי שיטות בנייה סטנדרטיות בארונות ורהיט מובנה.
+
+נתוני ייצור קבועים לעבודה זו (לקוח את הנגר עצמו הגדיר בהגדרות שלו — השתמש בהם בדיוק):
+- עובי לוח ראשי: ${settings.boardThicknessMm} מ״מ
+- עובי לוח גב: ${settings.backThicknessMm} מ״מ
+- גודל פלטה סטנדרטי: ${settings.sheetWidthCm}×${settings.sheetLengthCm} ס״מ (כלומר ${sheetW}×${sheetL} מ״מ)
+- גובה צוקל/רגליים ברירת מחדל אם לא נראה אחרת בתמונה: ${settings.plinthHeightMm} מ״מ
+
+בהינתן התמונה, בצע את הצעדים הבאים:
+1. הערך את המידות החיצוניות הכוללות של הרהיט/החלל (רוחב, גובה, עומק בס״מ) — השתמש באלמנטים מוכרים בתמונה (ידיות דלת ~10-15 ס״מ, גובה שיש מטבח סטנדרטי ~90 ס״מ, גובה דלת רגילה ~200-210 ס״מ) כדי לכייל את קנה המידה.
+2. בדוק אם יש צוקל/רגליים בבסיס הרהיט (רגליים בודדות, או פס צוקל רציף). אם כן — העריך את הגובה שלו (או השתמש בברירת המחדל שסופקה למעלה אם אי אפשר להעריך מהתמונה). גובה גוף הארון עצמו (הדפנות) = הגובה הכולל פחות גובה הצוקל. הצוקל עצמו הוא חלק/חלקים נפרדים ברשימה (למשל "פס צוקל קדמי", ולפעמים גם "פס צוקל צדדי" אם רלוונטי) - אל תכלול את גובה הצוקל בגובה הדפנות.
+3. ספור דלתות, מגירות ומדפים גלויים.
+4. פרק את הפרויקט לרשימת חלקים סטנדרטית: דפנות צד (2, בגובה גוף הארון בלבד ללא הצוקל), תחתית, עליון/תקרה, גב (ראה סעיף 5), מדפים (לפי הספירה, ברוחב הפנימי בניכוי 2× עובי הלוח הראשי), דלתות/חזיתות מגירה (לפי הספירה), וצוקל/רגליים אם זוהו. עבור כל חלק חשב מידות מדויקות תוך התחשבות בעובי הלוח (למשל מדף שנכנס בין שתי דפנות בעובי ${settings.boardThicknessMm} מ״מ יהיה קצר ברוחב הכולל פחות כ-${settings.boardThicknessMm*2} מ״מ).
+5. חלק הגב: השתמש בעובי לוח הגב (${settings.backThicknessMm} מ״מ), לא בעובי הלוח הראשי. אם מידות הגב הנדרשות (אורך או רוחב) חורגות מגודל הפלטה הסטנדרטית (${sheetW}×${sheetL} מ״מ, בכל כיוון סיבוב) — אל תיצור חלק גב אחד ענק. במקום זאת פצל אותו לשני חלקים או יותר שכל אחד נכנס בפלטה (למשל "גב עליון" + "גב תחתון"), וציין בהערה שיש לחבר ביניהם (למשל עם פינות/רפידות).
+6. כלל דומה לכל חלק אחר: אם חלק נדרש חורג מגודל הפלטה הסטנדרטית בשני הכיוונים — פצל אותו לחלקים קטנים יותר וציין זאת בהערה, במקום להציע חלק לא ריאלי.
+7. עבור כל חלק קבע גם עובי (thickness_mm) — ${settings.boardThicknessMm} לרוב החלקים, ${settings.backThicknessMm} לחלקי הגב.
+8. עבור כל חלק קבע האם נדרש קנט (סרט הדבקה) בצד האורך ו/או הרוחב — בדרך כלל חזיתות גלויות (דלתות, קצוות קדמיים של מדפים, צוקל) מקבלות קנט, גב הארון וחלקים פנימיים נסתרים לא.
+
+החזר אך ורק JSON תקין (בלי טקסט נוסף, בלי מרקדאון, בלי גדרות קוד) במבנה הבא:
+{
+  "item_description": "תיאור קצר של מה שרואים בתמונה (בעברית)",
+  "estimated_overall_width_cm": מספר,
+  "estimated_overall_height_cm": מספר,
+  "estimated_overall_depth_cm": מספר,
+  "estimated_plinth_height_mm": מספר (0 אם אין צוקל/רגליים נראים),
+  "suggested_material": "אחד מהאופציות הבאות בלבד אם רלוונטי: ${materialsList}",
+  "confidence": "low" | "medium" | "high",
+  "notes": "כל דבר חשוב שנגר צריך לשים לב אליו לפני שליחת הצעת מחיר (בעברית, משפט אחד או שניים)",
+  "parts": [
+    {
+      "name": "שם החלק בעברית, לדוגמה: דופן שמאל",
+      "length_mm": מספר,
+      "width_mm": מספר,
+      "thickness_mm": מספר,
+      "qty": מספר,
+      "edge_length": "none" | "1x" | "2x",
+      "edge_width": "none" | "1x" | "2x",
+      "note": "הערה קצרה אם רלוונטי (למשל אם פוצל בגלל גודל פלטה), אחרת מחרוזת ריקה"
+    }
+  ]
+}
+חשוב: אלו הערכות בלבד מתוך תמונה, לא מדידה מדויקת. רשימת החלקים היא נקודת פתיחה סבירה שחובה על הנגר לאמת ולתקן בשטח לפני חיתוך בפועל. ה-confidence צריך לשקף כמה אתה בטוח במידות בהינתן שאין קנה מידה ברור בתמונה.`;
+
+  try{
+    const response = await fetch("/api/claude", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-5",
+        max_tokens: 3000,
+        messages: [{
+          role: "user",
+          content: [
+            {type: "image", source: {type: "base64", media_type: aiImageMediaType, data: aiImageBase64}},
+            {type: "text", text: prompt}
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const textBlocks = (data.content || []).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const cleaned = textBlocks.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(cleaned);
+    if(!Array.isArray(result.parts)) result.parts = [];
+    aiLastResult = result;
+    renderAiResult(result);
+    statusEl.textContent = '✓ ניתוח הושלם — בדוק ואשר לפני שימוש';
+  }catch(err){
+    statusEl.textContent = '⚠ הניתוח נכשל. נסה שוב או המשך למלא ידנית.';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function renderAiResult(r){
+  const box = document.getElementById('aiResultBox');
+  const confLabel = {low:'נמוכה', medium:'בינונית', high:'גבוהה'}[r.confidence] || r.confidence;
+  const partsRows = (r.parts||[]).map(p=>`
+    <div class="field"><span>${escapeHtml(p.name||'—')} ×${p.qty||1}</span><b>${p.length_mm||'—'}×${p.width_mm||'—'}×${p.thickness_mm||'—'} מ״מ</b></div>
+  `).join('');
+  box.innerHTML = `
+    <div class="warn">⚠ פירוק AI בלבד — לא תחליף מדידה בשטח. חובה לאמת ולתקן כל שורה לפני חיתוך.</div>
+    <div class="field"><span>תיאור</span><b>${escapeHtml(r.item_description||'—')}</b></div>
+    <div class="field"><span>מידות חיצוניות משוערות</span><b>${r.estimated_overall_width_cm||'—'}×${r.estimated_overall_height_cm||'—'}×${r.estimated_overall_depth_cm||'—'} ס״מ</b></div>
+    <div class="field"><span>גובה צוקל משוער</span><b>${r.estimated_plinth_height_mm||0} מ״מ</b></div>
+    <div class="field"><span>חומר מוצע</span><b>${escapeHtml(r.suggested_material||'—')}</b></div>
+    <div class="field"><span>רמת ביטחון</span><b>${confLabel}</b></div>
+    ${r.notes?`<div class="field" style="display:block;margin-top:6px;"><span>הערת AI: </span>${escapeHtml(r.notes)}</div>`:''}
+    <div style="margin-top:10px;font-weight:700;font-size:12.5px;color:var(--walnut-dark);">רשימת חלקים מוצעת (${(r.parts||[]).length}):</div>
+    ${partsRows || '<div class="field">לא זוהו חלקים ספציפיים</div>'}
+    <button class="primary" onclick="applyAiResult()">הוסף ${(r.parts||[]).length} חלקים לרשימת החיתוך</button>
+  `;
+  box.style.display = 'block';
+}
+
+function applyAiResult(){
+  if(!aiLastResult) return;
+  const r = aiLastResult;
+  const aiParts = (r.parts||[]).filter(p=>p.name && (parseFloat(p.length_mm)||0)>0 && (parseFloat(p.width_mm)||0)>0);
+
+  if(aiParts.length){
+    const newRows = aiParts.map(p=>({
+      id: uid(),
+      name: p.name.slice(0,60),
+      length: Math.round(parseFloat(p.length_mm)),
+      width: Math.round(parseFloat(p.width_mm)),
+      thickness: p.thickness_mm ? parseFloat(p.thickness_mm) : settings.boardThicknessMm,
+      qty: String(p.qty||1),
+      edgeLength: ['none','1x','2x'].includes(p.edge_length) ? p.edge_length : 'none',
+      edgeWidth: ['none','1x','2x'].includes(p.edge_width) ? p.edge_width : 'none',
+      note: (p.note ? p.note + ' — ' : '') + '[הערכת AI, יש לאמת]'
+    }));
+    // drop the single default empty row, replace with AI suggestions
+    const isEmptyPlaceholder = parts.length===1 && !parts[0].name.trim() && !parts[0].length && !parts[0].width;
+    parts = isEmptyPlaceholder ? newRows : parts.concat(newRows);
+    renderPartsList();
+    renderCutlistSummary();
+  }
+  if(r.estimated_plinth_height_mm){
+    document.getElementById('projectPlinthHeight').value = Math.round(r.estimated_plinth_height_mm);
+  }
+  if(r.estimated_overall_depth_cm){
+    document.getElementById('projectDepth').value = Math.round(r.estimated_overall_depth_cm);
+  }
+  if(r.suggested_material){
+    const match = settings.materials.find(m=>m.name===r.suggested_material);
+    if(match) document.getElementById('materialSelect').value = match.id;
+  }
+  if(!document.getElementById('projectName').value && r.item_description){
+    document.getElementById('projectName').value = r.item_description;
+  }
+  renderPreview();
+  showToast('הנתונים מולאו ברשימת החיתוך — בדוק ותקן לפי הצורך');
+}
+
+// ---------- save quote as order ----------
+async function saveQuote(){
+  const c = calcQuote();
+  const clientName = document.getElementById('clientName').value.trim();
+  const projectName = document.getElementById('projectName').value.trim() || 'פרויקט ללא שם';
+  if(!clientName){
+    showToast('הזן שם לקוח לפני השמירה');
+    return;
+  }
+  const q = {
+    id: uid(),
+    clientName, projectName,
+    clientPhone: document.getElementById('clientPhone').value.trim(),
+    date: new Date().toISOString(),
+    parts: getValidParts(),
+    plinthHeightMm: parseFloat(document.getElementById('projectPlinthHeight').value) || 0,
+    depthCm: parseFloat(document.getElementById('projectDepth').value) || 0,
+    materialAreaM2: c.areaM2,
+    cutlistRawAreaM2: getRawAreaM2(),
+    materialName: c.material ? c.material.name : '',
+    hardware: c.hardware,
+    hardwareItems: getValidHardwareItems(),
+    workStages: workStages.filter(s=>s.name.trim() && parseFloat(s.hours)>0),
+    hours: c.hours,
+    notes: document.getElementById('notes').value,
+    total: c.total,
+    payments: [],
+    status: 'quote'
+  };
+  quotes.unshift(q);
+  await persistQuotes();
+  showToast('ההזמנה נשמרה ✓');
+  document.getElementById('clientName').value='';
+  document.getElementById('clientPhone').value='';
+  document.getElementById('projectName').value='';
+  document.getElementById('hardwareCost').value='';
+  document.getElementById('materialArea').value='';
+  document.getElementById('projectPlinthHeight').value='';
+  document.getElementById('projectDepth').value='';
+  resetParts();
+  resetWorkStages();
+  resetHardwareItems();
+  document.getElementById('notes').value='';
+  renderPreview();
+  renderCutlistSummary();
+}
+
+// ---------- orders tab ----------
+const STATUS_LABELS = {quote:'הצעת מחיר', production:'בייצור', delivered:'נמסר'};
+const STATUS_ORDER = ['quote','production','delivered'];
+let expandedOrderId = null;
+
+function paidSum(q){ return (q.payments||[]).reduce((s,p)=>s+p.amount,0); }
+
+function renderOrders(){
+  const wrap = document.getElementById('ordersList');
+  if(!quotes.length){
+    wrap.innerHTML = '<div class="empty-state">עדיין אין הזמנות שמורות. צור הצעת מחיר בטאב הראשון ולחץ "שמור הזמנה".</div>';
+    return;
+  }
+  wrap.innerHTML = quotes.map(q=>{
+    const d = new Date(q.date).toLocaleDateString('he-IL');
+    const paid = paidSum(q);
+    const remaining = Math.max(0, q.total - paid);
+    const pct = q.total>0 ? Math.min(100, Math.round(paid/q.total*100)) : 0;
+    const isOpen = expandedOrderId === q.id;
+    return `
+    <div class="order-card-wrap">
+      <div class="order-card" onclick="toggleExpand('${q.id}')" style="cursor:pointer;">
+        <div class="order-info">
+          <div class="name">${escapeHtml(q.clientName)} — ${escapeHtml(q.projectName)}</div>
+          <div class="sub">${d} · ${escapeHtml(q.materialName||'')} · ${(q.parts||[]).length} חלקים בדוח חיתוך · ${(q.materialAreaM2||0).toFixed(2)} מ״ר לתמחור</div>
+          <div class="pay-bar"><div class="pay-bar-fill" style="width:${pct}%;"></div></div>
+          <div class="pay-sub">שולם ₪${fmt(paid)} מתוך ₪${fmt(q.total)} ${remaining>0?`— נותר ₪${fmt(remaining)}`:'— שולם במלואו ✓'}</div>
+        </div>
+        <div class="order-right">
+          <div class="order-amount">₪${fmt(q.total)}</div>
+          <button class="status-badge status-${q.status}" onclick="event.stopPropagation();cycleStatus('${q.id}')">${STATUS_LABELS[q.status]}</button>
+          <button class="danger-link" onclick="event.stopPropagation();deleteQuote('${q.id}')">מחק</button>
+        </div>
+      </div>
+      ${isOpen ? renderOrderDetail(q, remaining) : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleExpand(id){
+  expandedOrderId = (expandedOrderId===id) ? null : id;
+  renderOrders();
+}
+
+function renderOrderDetail(q, remaining){
+  const payments = q.payments || [];
+  return `
+  <div class="order-detail">
+    <div class="detail-title">תשלומים</div>
+    ${payments.length ? payments.map(p=>`
+      <div class="pay-row"><span>${new Date(p.date).toLocaleDateString('he-IL')}${p.note?' · '+escapeHtml(p.note):''}</span><b>₪${fmt(p.amount)}</b></div>
+    `).join('') : '<div class="pay-row" style="color:var(--ink-soft);">אין תשלומים רשומים עדיין</div>'}
+
+    <div class="add-pay-row">
+      <input type="number" placeholder="סכום" id="payAmt-${q.id}" min="0">
+      <input type="text" placeholder="הערה (אופציונלי)" id="payNote-${q.id}">
+      <button class="secondary" onclick="addPayment('${q.id}')">הוסף תשלום</button>
+    </div>
+
+    ${remaining>0 ? `
+    <div class="reminder-block">
+      <button class="link" onclick="generateReminder('${q.id}')" id="remBtn-${q.id}">✨ נסח תזכורת גביה עם AI</button>
+      <div id="remStatus-${q.id}" class="ai-status"></div>
+      <div id="remResult-${q.id}"></div>
+    </div>` : ''}
+  </div>`;
+}
+
+async function addPayment(id){
+  const amtEl = document.getElementById('payAmt-'+id);
+  const noteEl = document.getElementById('payNote-'+id);
+  const amount = parseFloat(amtEl.value);
+  if(!amount || amount<=0){ showToast('הזן סכום תקין'); return; }
+  const q = quotes.find(x=>x.id===id);
+  if(!q) return;
+  q.payments = q.payments || [];
+  q.payments.push({id: uid(), amount, date: new Date().toISOString(), note: noteEl.value.trim()});
+  await persistQuotes();
+  renderOrders();
+  showToast('התשלום נרשם ✓');
+}
+
+async function generateReminder(id){
+  const q = quotes.find(x=>x.id===id);
+  if(!q) return;
+  const remaining = Math.max(0, q.total - paidSum(q));
+  const statusEl = document.getElementById('remStatus-'+id);
+  const btn = document.getElementById('remBtn-'+id);
+  btn.disabled = true;
+  statusEl.textContent = '✍️ מנסח הודעה...';
+
+  const prompt = `נסח הודעת וואטסאפ קצרה, מנומסת ומקצועית בעברית מנגר ללקוח, לתזכורת תשלום.
+פרטים: שם לקוח: ${q.clientName}, פרויקט: ${q.projectName}, סכום שנותר לתשלום: ${remaining} ש״ח.
+הטון: ידידותי אך ברור, לא תוקפני, משפט או שניים, כולל שם הלקוח בפתיחה. בלי סוגריים מרובעים, בלי הסברים - רק ההודעה עצמה.`;
+
+  try{
+    const response = await fetch("/api/claude", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 300,
+        messages: [{role: "user", content: prompt}]
+      })
+    });
+    const data = await response.json();
+    const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    document.getElementById('remResult-'+id).innerHTML = `
+      <div class="rem-text">${escapeHtml(text)}</div>
+      <div class="rem-actions">
+        <button class="secondary" onclick="copyText(this,'${escapeForJs(text)}')">העתק</button>
+        ${q.clientPhone ? `<a class="secondary" style="display:inline-block;text-decoration:none;text-align:center;" target="_blank" href="https://wa.me/${q.clientPhone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}">פתח בוואטסאפ</a>` : ''}
+      </div>`;
+    statusEl.textContent = '';
+  }catch(e){
+    statusEl.textContent = '⚠ הניסוח נכשל, נסה שוב';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function escapeForJs(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+function copyText(btn, text){
+  navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(()=>{
+    const orig = btn.textContent; btn.textContent='הועתק ✓';
+    setTimeout(()=>btn.textContent=orig, 1500);
+  });
+}
+
+async function cycleStatus(id){
+  const q = quotes.find(x=>x.id===id);
+  if(!q) return;
+  const idx = STATUS_ORDER.indexOf(q.status);
+  q.status = STATUS_ORDER[(idx+1)%STATUS_ORDER.length];
+  await persistQuotes();
+  renderOrders();
+}
+
+async function deleteQuote(id){
+  quotes = quotes.filter(x=>x.id!==id);
+  await persistQuotes();
+  renderOrders();
+  showToast('ההזמנה נמחקה');
+}
+
+// ---------- settings tab ----------
+function renderSettingsForm(){
+  document.getElementById('setBizName').value = settings.bizName || '';
+  document.getElementById('setBizPhone').value = settings.bizPhone || '';
+  document.getElementById('setLaborRate').value = settings.laborRate;
+  document.getElementById('setOverhead').value = settings.overheadPct;
+  document.getElementById('setVat').value = settings.vatPct;
+  document.getElementById('setWastePct').value = settings.wastePct;
+  document.getElementById('setEdgeThickness').value = settings.edgeThicknessMm;
+  document.getElementById('setSheetWidth').value = settings.sheetWidthCm;
+  document.getElementById('setSheetLength').value = settings.sheetLengthCm;
+  document.getElementById('setBoardThickness').value = settings.boardThicknessMm;
+  document.getElementById('setBackThickness').value = settings.backThicknessMm;
+  document.getElementById('setTrimAllowance').value = settings.trimAllowanceMm;
+  document.getElementById('setPlinthHeight').value = settings.plinthHeightMm;
+  document.getElementById('setShowLabor').checked = !!settings.showLaborInQuote;
+  document.getElementById('setShowOverhead').checked = !!settings.showOverheadInQuote;
+  editingMaterialsDraft = structuredCloneSafe(settings.materials);
+  renderMaterialsSettingsList();
+}
+
+function renderMaterialsSettingsList(){
+  const wrap = document.getElementById('materialsSettingsList');
+  wrap.innerHTML = '';
+  editingMaterialsDraft.forEach((m, i)=>{
+    const row = document.createElement('div');
+    row.className = 'mat-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeHtml(m.name)}" data-idx="${i}" data-field="name">
+      <input type="number" value="${m.price}" data-idx="${i}" data-field="price">
+      <button class="mat-remove" data-idx="${i}" title="הסר">×</button>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      const f = e.target.dataset.field;
+      editingMaterialsDraft[i][f] = f==='price' ? (parseFloat(e.target.value)||0) : e.target.value;
+    });
+  });
+  wrap.querySelectorAll('.mat-remove').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const i = parseInt(e.target.dataset.idx);
+      editingMaterialsDraft.splice(i,1);
+      renderMaterialsSettingsList();
+    });
+  });
+}
+
+function addMaterialRow(){
+  editingMaterialsDraft.push({id: uid(), name: '', price: 0});
+  renderMaterialsSettingsList();
+}
+
+async function saveSettings(){
+  settings.bizName = document.getElementById('setBizName').value.trim();
+  settings.bizPhone = document.getElementById('setBizPhone').value.trim();
+  settings.laborRate = parseFloat(document.getElementById('setLaborRate').value) || 0;
+  settings.overheadPct = parseFloat(document.getElementById('setOverhead').value) || 0;
+  settings.vatPct = parseFloat(document.getElementById('setVat').value) || 0;
+  settings.wastePct = parseFloat(document.getElementById('setWastePct').value) || 0;
+  settings.edgeThicknessMm = parseFloat(document.getElementById('setEdgeThickness').value) || 0;
+  settings.sheetWidthCm = parseFloat(document.getElementById('setSheetWidth').value) || DEFAULT_SETTINGS.sheetWidthCm;
+  settings.sheetLengthCm = parseFloat(document.getElementById('setSheetLength').value) || DEFAULT_SETTINGS.sheetLengthCm;
+  settings.boardThicknessMm = parseFloat(document.getElementById('setBoardThickness').value) || DEFAULT_SETTINGS.boardThicknessMm;
+  settings.backThicknessMm = parseFloat(document.getElementById('setBackThickness').value) || DEFAULT_SETTINGS.backThicknessMm;
+  settings.trimAllowanceMm = parseFloat(document.getElementById('setTrimAllowance').value) || 0;
+  settings.plinthHeightMm = parseFloat(document.getElementById('setPlinthHeight').value) || 0;
+  settings.showLaborInQuote = document.getElementById('setShowLabor').checked;
+  settings.showOverheadInQuote = document.getElementById('setShowOverhead').checked;
+  settings.materials = editingMaterialsDraft.filter(m=>m.name.trim().length>0);
+  if(!settings.materials.length) settings.materials = structuredCloneSafe(DEFAULT_SETTINGS.materials);
+  await persistSettings();
+  renderHeader();
+  renderMaterialSelect();
+  renderPreview();
+  showToast('ההגדרות נשמרו ✓');
+}
+
+// ---------- init ----------
+(async function init(){
+  document.getElementById('quotePreviewPanel').innerHTML = '<div class="empty-state">טוען נתונים...</div>';
+  await loadSettings();
+  await loadQuotes();
+  renderHeader();
+  renderMaterialSelect();
+  document.getElementById('projectPlinthHeight').value = settings.plinthHeightMm;
+  renderPartsList();
+  renderWorkStagesList();
+  renderHardwareItemsList();
+  renderCutlistSummary();
+  renderCutlistAreaRefHint();
+  renderPreview();
+})();
+</script>
+</body>
+</html>
