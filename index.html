@@ -416,7 +416,18 @@
                 <label>עלות פרזול (ידיות, צירים וכו׳)</label>
                 <input type="number" id="hardwareCost" min="0" placeholder="0">
               </div>
-              <div></div>
+              <div>
+                <label for="overheadMode">תכנון, ייצור ותקורה</label>
+                <select id="overheadMode" onchange="toggleOverheadMode();renderPreview()">
+                  <option value="percent">חישוב אוטומטי לפי אחוז</option>
+                  <option value="manual">הזנת סכום ידני</option>
+                </select>
+              </div>
+            </div>
+            <div id="manualOverheadWrap" style="display:none;">
+              <label for="manualOverhead">סכום תכנון, ייצור ותקורה (₪)</label>
+              <input type="number" id="manualOverhead" min="0" placeholder="0">
+              <div class="hint">הסכום מתווסף לעלות החומר, הפרזול והעבודה לפני מע״מ.</div>
             </div>
 
             <label>פירוק שעות עבודה לפי שלב</label>
@@ -1075,12 +1086,19 @@ function calcQuote(){
   const materialCost = areaM2 * (material ? material.price : 0);
   const laborCost = hours * settings.laborRate;
   const subtotal = materialCost + hardware + laborCost;
-  const overheadAmount = subtotal * (settings.overheadPct/100);
+  const overheadMode = document.getElementById('overheadMode')?.value || 'percent';
+  const manualOverhead = parseFloat(document.getElementById('manualOverhead')?.value) || 0;
+  const overheadAmount = overheadMode==='manual' ? manualOverhead : subtotal * (settings.overheadPct/100);
   const preVat = subtotal + overheadAmount;
   const vatAmount = preVat * (settings.vatPct/100);
   const total = preVat + vatAmount;
 
-  return {material, areaM2, materialCost, hardware, laborCost, hours, subtotal, overheadAmount, preVat, vatAmount, total};
+  return {material, areaM2, materialCost, hardware, laborCost, hours, subtotal, overheadMode, overheadAmount, preVat, vatAmount, total};
+}
+
+function toggleOverheadMode(){
+  const manual=document.getElementById('overheadMode').value==='manual';
+  document.getElementById('manualOverheadWrap').style.display=manual?'block':'none';
 }
 
 function copyAreaFromCutlist(){
@@ -1118,9 +1136,9 @@ function renderPreview(){
     ? (stageLines || `<div class="qline"><span class="lbl">עבודה (${c.hours||0} שעות)</span><span class="val">₪${fmt(c.laborCost)}</span></div>`)
     : '';
 
-  const overheadLine = settings.showOverheadInQuote
-    ? `<div class="qline"><span class="lbl">רווח + תקורה (${settings.overheadPct}%)</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>`
-    : (c.overheadAmount>0 ? `<div class="qline"><span class="lbl">תכנון, ייצור ותקורה</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>` : '');
+  const overheadLine = c.overheadAmount>0
+    ? `<div class="qline"><span class="lbl">תכנון, ייצור ותקורה${c.overheadMode==='percent'&&settings.showOverheadInQuote?' ('+settings.overheadPct+'%)':''}</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>`
+    : '';
 
   const panel = document.getElementById('quotePreviewPanel');
   const quoteNumber = editingQuoteId ? (quotes.find(q=>q.id===editingQuoteId)?.quoteNumber||nextQuoteNumber()) : nextQuoteNumber();
@@ -1199,11 +1217,22 @@ function safePdfName(name){
 
 async function createQuotePdfBlob(){
   if(typeof html2pdf==='undefined') throw new Error('PDF library unavailable');
-  return await html2pdf().set({
+  const element=document.getElementById('quotePreviewPanel');
+  if(!element || !element.innerText.trim()) throw new Error('Quote is empty');
+  const worker=html2pdf().set({
     margin:[10,10,10,10], image:{type:'jpeg',quality:.96},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}, pagebreak:{mode:['avoid-all','css','legacy']}
-  }).from(document.getElementById('quotePreviewPanel')).outputPdf('blob');
+    html2canvas:{
+      scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0,
+      onclone:doc=>{
+        const quote=doc.getElementById('quotePreviewPanel');
+        if(quote){quote.style.position='static';quote.style.width='760px';quote.style.maxWidth='760px';quote.style.boxShadow='none';quote.style.display='block';}
+      }
+    },
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}
+  }).from(element).toContainer().toCanvas().toPdf();
+  const blob=await worker.outputPdf('blob');
+  if(!blob || blob.size<2000) throw new Error('Generated PDF is empty');
+  return blob;
 }
 
 async function downloadCurrentQuotePdf(){
@@ -1237,7 +1266,7 @@ async function shareCurrentQuotePdf(){
   }catch(e){if(e.name!=='AbortError')showToast('לא ניתן לשתף — נסה להוריד את ה־PDF');}
 }
 
-['clientName','projectName','materialSelect','hardwareCost','notes'].forEach(id=>{
+['clientName','projectName','materialSelect','hardwareCost','overheadMode','manualOverhead','notes'].forEach(id=>{
   document.addEventListener('input', (e)=>{ if(e.target.id===id) renderPreview(); });
   document.addEventListener('change', (e)=>{ if(e.target.id===id) renderPreview(); });
 });
@@ -1568,6 +1597,8 @@ async function saveQuote(){
     cutlistRawAreaM2: getRawAreaM2(),
     materialName: c.material ? c.material.name : '',
     hardware: c.hardware,
+    overheadMode: c.overheadMode,
+    manualOverhead: c.overheadMode==='manual' ? c.overheadAmount : 0,
     hardwareItems: getValidHardwareItems(),
     workStages: workStages.filter(s=>s.name.trim() && parseFloat(s.hours)>0),
     hours: c.hours,
@@ -1587,6 +1618,9 @@ async function saveQuote(){
   document.getElementById('clientPhone').value='';
   document.getElementById('projectName').value='';
   document.getElementById('hardwareCost').value='';
+  document.getElementById('overheadMode').value='percent';
+  document.getElementById('manualOverhead').value='';
+  toggleOverheadMode();
   document.getElementById('materialArea').value='';
   document.getElementById('projectPlinthHeight').value='';
   document.getElementById('projectDepth').value='';
@@ -1648,6 +1682,9 @@ function editQuote(id){
   document.getElementById('projectName').value=q.projectName||'';
   document.getElementById('materialArea').value=q.materialAreaM2||'';
   document.getElementById('hardwareCost').value=q.hardware||'';
+  document.getElementById('overheadMode').value=q.overheadMode||'percent';
+  document.getElementById('manualOverhead').value=q.manualOverhead||'';
+  toggleOverheadMode();
   document.getElementById('notes').value=q.notes||'';
   const mat=settings.materials.find(m=>m.name===q.materialName); if(mat) document.getElementById('materialSelect').value=mat.id;
   parts=(q.parts&&q.parts.length)?structuredCloneSafe(q.parts):[blankPart()];
@@ -1866,6 +1903,7 @@ async function saveSettings(){
   if(!saved) return;
   renderHeader();
   renderMaterialSelect();
+  toggleOverheadMode();
   renderPreview();
   showToast('ההגדרות נשמרו ✓');
 }
