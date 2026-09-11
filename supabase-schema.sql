@@ -22,3 +22,23 @@ create policy "allow anon write" on app_data
 
 create policy "allow anon update" on app_data
   for update using (true);
+
+-- Secure multi-user storage. The original MVP table remains untouched.
+create table if not exists user_app_data (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  id text not null,
+  value text not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+alter table user_app_data enable row level security;
+
+create policy "users read own data" on user_app_data
+  for select to authenticated using (auth.uid() = user_id);
+create policy "users insert own data" on user_app_data
+  for insert to authenticated with check (auth.uid() = user_id);
+create policy "users update own data" on user_app_data
+  for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "users delete own data" on user_app_data
+  for delete to authenticated using (auth.uid() = user_id);
