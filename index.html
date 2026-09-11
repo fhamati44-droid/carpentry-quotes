@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>מחשבון הצעות מחיר לנגרות</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --paper:#EFE7D8;
@@ -317,6 +318,42 @@
     .modal-close, .modal-actions{display:none !important;}
     body:not(.printing-cutlist) .modal-overlay{display:none !important;}
   }
+
+  /* 2026 product UI */
+  :root{
+    --paper:#F4F6F8;--paper-dark:#EEF1F4;--ink:#182026;--ink-soft:#66727D;
+    --walnut:#755034;--walnut-dark:#3A2A20;--oak:#C9782B;--oak-light:#D98C42;
+    --card:#FFFFFF;--border:#DDE3E8;--border-strong:#C6CFD7;--blueprint:#315A78;
+  }
+  body{background:linear-gradient(180deg,#F7F8FA 0,#EFF2F4 100%);min-height:100vh;}
+  .app{max-width:1240px;padding-bottom:80px;}
+  header.topbar{background:linear-gradient(125deg,#241B16,#62432E);padding:26px 30px;border:0;box-shadow:0 8px 30px rgba(31,24,19,.16);}
+  header.topbar h1{font-size:25px;}
+  nav.tabs{top:0;margin:0;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:0;box-shadow:0 4px 18px rgba(20,30,38,.08);}
+  nav.tabs button{padding:17px 12px;transition:.2s ease;}
+  main{padding:28px;}
+  .panel{border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 32px rgba(23,33,41,.07);overflow:hidden;}
+  .panel h2{font-size:16px;padding:17px 20px;background:linear-gradient(90deg,#F4EEE7,#FAFBFC);}
+  .panel-body{padding:22px;}
+  input[type=text],input[type=number],select,textarea{border-radius:9px;padding:11px 12px;transition:border .2s,box-shadow .2s;}
+  input:focus,select:focus,textarea:focus{outline:0;border-color:var(--oak);box-shadow:0 0 0 3px rgba(201,120,43,.13);}
+  button.primary,button.secondary,button.whatsapp,.whatsapp{border-radius:9px;min-height:43px;transition:transform .15s,box-shadow .15s,background .15s;}
+  button.primary{box-shadow:0 6px 14px rgba(201,120,43,.2);}
+  button.primary:hover,button.secondary:hover,button.whatsapp:hover{transform:translateY(-1px);}
+  .quote-paper{border-radius:14px;box-shadow:0 14px 42px rgba(23,33,41,.10);position:sticky;top:84px;}
+  .quote-head{display:flex;align-items:center;gap:14px;padding:22px;border-bottom:1px solid var(--border);}
+  .quote-logo{width:64px;height:64px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#fff;padding:4px;}
+  .quote-number{margin-inline-start:auto;font-size:12px;color:var(--ink-soft);text-align:left;}
+  .quote-meta,.quote-lines{padding:18px 22px;}
+  .qtotal{padding:19px 22px;background:linear-gradient(90deg,#F3E8DA,#FAF7F2);}
+  .logo-upload{display:grid;grid-template-columns:88px 1fr;gap:16px;align-items:center;padding:14px;border:1px dashed var(--border-strong);border-radius:12px;background:#FAFBFC;}
+  .logo-preview{width:88px;height:88px;object-fit:contain;border-radius:12px;background:#fff;border:1px solid var(--border);padding:6px;}
+  .section-note{padding:11px 13px;border-radius:9px;background:#F0F6FA;color:var(--blueprint);font-size:12.5px;margin-bottom:16px;}
+  @media(max-width:860px){
+    header.topbar{padding:20px 18px;} header.topbar h1{font-size:20px;}
+    main{padding:12px}.panel-body{padding:15px}.quote-paper{position:static}.grid2{gap:14px}
+    .quote-head{padding:16px}.quote-logo{width:52px;height:52px}.logo-upload{grid-template-columns:70px 1fr}.logo-preview{width:70px;height:70px}
+  }
 </style>
 </head>
 <body>
@@ -390,10 +427,10 @@
             <label>הערות להצעה (אופציונלי)</label>
             <textarea id="notes" placeholder="לדוגמה: זמן אספקה 14 יום, כולל התקנה"></textarea>
 
-            <div class="actions-row">
-              <button class="primary" id="saveQuoteBtn" onclick="saveQuote()">שמור הצעת מחיר</button>
-              <button class="secondary" onclick="window.print()">הדפס הצעה / שמור כ-PDF</button>
-              <button class="whatsapp" onclick="shareCurrentQuoteWhatsApp()">שלח הצעת מחיר בוואטסאפ</button>
+          <div class="actions-row">
+            <button class="primary" id="saveQuoteBtn" onclick="saveQuote()">שמור הצעת מחיר</button>
+              <button class="secondary" onclick="downloadCurrentQuotePdf()">הורד הצעה כ־PDF</button>
+              <button class="whatsapp" onclick="shareCurrentQuotePdf()">שלח PDF בוואטסאפ</button>
             </div>
           </div>
         </div>
@@ -465,6 +502,16 @@
       <div class="panel">
         <h2>הגדרות עסק ומחירון</h2>
         <div class="panel-body">
+
+          <label for="setBizLogo">לוגו העסק</label>
+          <div class="logo-upload">
+            <img id="setBizLogoPreview" class="logo-preview" alt="תצוגה מקדימה של לוגו העסק">
+            <div>
+              <input type="file" id="setBizLogo" accept="image/png,image/jpeg,image/webp">
+              <div class="hint">מומלץ לוגו מרובע עם רקע שקוף. התמונה נשמרת בדפדפן ומופיעה בהצעה וב־PDF.</div>
+              <button class="danger-link" type="button" onclick="removeBizLogo()" style="margin-top:8px;">הסר לוגו</button>
+            </div>
+          </div>
 
           <label>שם העסק</label>
           <input type="text" id="setBizName" placeholder="נגרות דוד / Al Noor Carpentry">
@@ -611,6 +658,7 @@ let editingQuoteId = null;
 const DEFAULT_SETTINGS = {
   bizName: "",
   bizPhone: "",
+  bizLogo: "",
   laborRate: 60,
   overheadPct: 30,
   vatPct: 18,
@@ -1064,7 +1112,7 @@ function renderPreview(){
     ? workStages.filter(s=>s.name.trim() && parseFloat(s.hours)>0).map(s=>
         `<div class="qline"><span class="lbl">${escapeHtml(s.name)} (${s.hours} שעות)</span><span class="val">₪${fmt((parseFloat(s.hours)||0)*settings.laborRate)}</span></div>`
       ).join('')
-    : (c.overheadAmount>0 ? `<div class="qline"><span class="lbl">תכנון, ייצור ותקורה</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>` : '');
+    : '';
 
   const laborLine = settings.showLaborInQuote
     ? (stageLines || `<div class="qline"><span class="lbl">עבודה (${c.hours||0} שעות)</span><span class="val">₪${fmt(c.laborCost)}</span></div>`)
@@ -1072,13 +1120,16 @@ function renderPreview(){
 
   const overheadLine = settings.showOverheadInQuote
     ? `<div class="qline"><span class="lbl">רווח + תקורה (${settings.overheadPct}%)</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>`
-    : '';
+    : (c.overheadAmount>0 ? `<div class="qline"><span class="lbl">תכנון, ייצור ותקורה</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>` : '');
 
   const panel = document.getElementById('quotePreviewPanel');
+  const quoteNumber = editingQuoteId ? (quotes.find(q=>q.id===editingQuoteId)?.quoteNumber||nextQuoteNumber()) : nextQuoteNumber();
   panel.innerHTML = `
     <div class="quote-head">
-      <div class="biz-name">${escapeHtml(settings.bizName || 'שם העסק שלך')}</div>
-      <div class="biz-sub">${escapeHtml(settings.bizPhone || 'הוסף טלפון בהגדרות')} · הצעת מחיר · ${today}</div>
+      ${settings.bizLogo ? `<img class="quote-logo" src="${settings.bizLogo}" alt="${escapeHtml(settings.bizName||'לוגו העסק')}">` : ''}
+      <div><div class="biz-name">${escapeHtml(settings.bizName || 'שם העסק שלך')}</div>
+      <div class="biz-sub">${escapeHtml(settings.bizPhone || 'הוסף טלפון בהגדרות')} · הצעת מחיר · ${today}</div></div>
+      <div class="quote-number"><b>${quoteNumber}</b><br>בתוקף ל־14 יום</div>
     </div>
     <div class="quote-meta">
       <div><span class="k">לקוח</span><span>${escapeHtml(clientName)}</span></div>
@@ -1140,6 +1191,50 @@ function shareCurrentQuoteWhatsApp(){
 function shareSavedQuoteWhatsApp(id){
   const q = quotes.find(x=>x.id===id);
   if(q) openWhatsApp(q.clientPhone, quoteWhatsAppText(q));
+}
+
+function safePdfName(name){
+  return String(name||'הצעת-מחיר').trim().replace(/[^\u0590-\u05FFa-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'') || 'הצעת-מחיר';
+}
+
+async function createQuotePdfBlob(){
+  if(typeof html2pdf==='undefined') throw new Error('PDF library unavailable');
+  return await html2pdf().set({
+    margin:[10,10,10,10], image:{type:'jpeg',quality:.96},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}, pagebreak:{mode:['avoid-all','css','legacy']}
+  }).from(document.getElementById('quotePreviewPanel')).outputPdf('blob');
+}
+
+async function downloadCurrentQuotePdf(){
+  const name=document.getElementById('clientName').value.trim();
+  if(!name){showToast('הזן שם לקוח לפני יצירת PDF');return;}
+  if(calcQuote().total<=0){showToast('לא ניתן ליצור הצעה בסכום אפס');return;}
+  showToast('מכין PDF...');
+  try{
+    const blob=await createQuotePdfBlob(),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=`הצעת-מחיר-${safePdfName(name)}.pdf`;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);showToast('קובץ ה־PDF מוכן ✓');
+  }catch(e){showToast('יצירת ה־PDF נכשלה — נסה שוב');}
+}
+
+async function shareCurrentQuotePdf(){
+  const name=document.getElementById('clientName').value.trim(),phone=document.getElementById('clientPhone').value.trim();
+  if(!name){showToast('הזן שם לקוח לפני השליחה');return;}
+  if(!normalizeWhatsAppPhone(phone)){showToast('הזן מספר נייד ישראלי תקין');return;}
+  if(calcQuote().total<=0){showToast('לא ניתן לשלוח הצעה בסכום אפס');return;}
+  showToast('מכין PDF לשיתוף...');
+  try{
+    const blob=await createQuotePdfBlob();
+    const file=new File([blob],`הצעת-מחיר-${safePdfName(name)}.pdf`,{type:'application/pdf'});
+    const q={clientName:name,projectName:document.getElementById('projectName').value.trim()||'פרויקט',total:calcQuote().total};
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'הצעת מחיר',text:quoteWhatsAppText(q)});return;
+    }
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=file.name;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);showToast('ה־PDF ירד — צרף אותו להודעת הוואטסאפ');
+    setTimeout(()=>openWhatsApp(phone,quoteWhatsAppText(q)),500);
+  }catch(e){if(e.name!=='AbortError')showToast('לא ניתן לשתף — נסה להוריד את ה־PDF');}
 }
 
 ['clientName','projectName','materialSelect','hardwareCost','notes'].forEach(id=>{
@@ -1676,6 +1771,9 @@ async function deleteQuote(id){
 
 // ---------- settings tab ----------
 function renderSettingsForm(){
+  const logoPreview=document.getElementById('setBizLogoPreview');
+  logoPreview.src=settings.bizLogo||'';
+  logoPreview.style.display=settings.bizLogo?'block':'none';
   document.getElementById('setBizName').value = settings.bizName || '';
   document.getElementById('setBizPhone').value = settings.bizPhone || '';
   document.getElementById('setLaborRate').value = settings.laborRate;
@@ -1693,6 +1791,23 @@ function renderSettingsForm(){
   document.getElementById('setShowOverhead').checked = !!settings.showOverheadInQuote;
   editingMaterialsDraft = structuredCloneSafe(settings.materials);
   renderMaterialsSettingsList();
+}
+
+document.getElementById('setBizLogo').addEventListener('change',async e=>{
+  const file=e.target.files&&e.target.files[0]; if(!file)return;
+  if(file.size>8*1024*1024){showToast('הלוגו גדול מדי — עד 8MB');e.target.value='';return;}
+  try{
+    const resized=await resizeImageFile(file,500,.9);
+    settings.bizLogo=resized.dataUrl;
+    const preview=document.getElementById('setBizLogoPreview');preview.src=settings.bizLogo;preview.style.display='block';
+    renderPreview();showToast('הלוגו נוסף — לחץ שמור הגדרות');
+  }catch(err){showToast('לא ניתן לקרוא את קובץ הלוגו');}
+});
+
+function removeBizLogo(){
+  settings.bizLogo='';document.getElementById('setBizLogo').value='';
+  document.getElementById('setBizLogoPreview').style.display='none';renderPreview();
+  showToast('הלוגו הוסר — לחץ שמור הגדרות');
 }
 
 function renderMaterialsSettingsList(){
