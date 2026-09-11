@@ -23,6 +23,11 @@ create policy "allow anon write" on app_data
 create policy "allow anon update" on app_data
   for update using (true);
 
+-- Remove the temporary public MVP access before enabling accounts.
+drop policy if exists "allow anon read" on app_data;
+drop policy if exists "allow anon write" on app_data;
+drop policy if exists "allow anon update" on app_data;
+
 -- Secure multi-user storage. The original MVP table remains untouched.
 create table if not exists user_app_data (
   user_id uuid not null references auth.users(id) on delete cascade,
