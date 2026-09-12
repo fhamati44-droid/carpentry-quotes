@@ -6,7 +6,116 @@
 <title>מחשבון הצעות מחיר לנגרות</title>
 <meta name="description" content="מערכת חכמה לנגרים ליצירת הצעות מחיר, ניהול לקוחות ותכנון חיתוך.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23251c17'/%3E%3Cpath d='M18 44 43 19l4 4-25 25h-4v-4Z' fill='%23d58a3c'/%3E%3Cpath d='m39 17 8 8' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+const AR_TRANSLATIONS = {
+  'מחשבון הצעות מחיר לנגרות':'نظام عروض الأسعار للنجارة',
+  'הגדר את שם העסק שלך בהגדרות המחירון':'أضف اسم ورشتك من إعدادات التسعير',
+  'הכינו הצעת מחיר מקצועית ושלחו אותה תוך דקות':'جهّز عرض سعر احترافي وأرسله خلال دقائق',
+  'הצעות מקצועיות, מסודרות ומוכנות לשליחה':'عروض احترافية، مرتبة وجاهزة للإرسال',
+  'מהתמונה להצעה מקצועית':'من الصورة إلى عرض سعر احترافي',
+  'פחות התעסקות בניירת, יותר זמן לעבוד ולסגור לקוחות.':'أوراق أقل، ووقت أكثر للعمل وإغلاق الصفقات.',
+  'יציאה':'تسجيل الخروج','כניסה':'تسجيل الدخول','יצירת משתמש':'إنشاء حساب',
+  'העסק שלך,':'ورشتك،','מסודר במקום אחד':'مرتبة في مكان واحد',
+  'מכינים הצעות מחיר מקצועיות, שומרים לקוחות ושולחים לוואטסאפ בלי ניירת מיותרת.':'أنشئ عروض أسعار احترافية، واحفظ العملاء وأرسل عبر واتساب دون أوراق زائدة.',
+  'כל ההצעות נשמרות בחשבון שלך':'كل عروض الأسعار محفوظة في حسابك',
+  'הנתונים שלך נפרדים ומאובטחים':'بياناتك منفصلة وآمنة','עובד בנייד ובמחשב':'يعمل على الجوال والكمبيوتر',
+  'טוב שחזרת':'أهلاً بعودتك','התחבר כדי להמשיך להצעות המחיר שלך':'سجّل الدخول لمتابعة عروض أسعارك',
+  'פותחים חשבון חדש':'إنشاء حساب جديد','דקה אחת והעסק שלך מסודר':'دقيقة واحدة وتصبح ورشتك مرتبة',
+  'שם הנגר / העסק':'اسم النجار / الورشة','שם משתמש (כתובת אימייל)':'اسم المستخدم (البريد الإلكتروني)',
+  'סיסמה':'كلمة المرور','הצג':'إظهار','הסתר':'إخفاء','כניסה לחשבון':'دخول إلى الحساب',
+  'יצירת חשבון':'إنشاء الحساب','רגע אחד...':'لحظة من فضلك...','החשבון נשאר מחובר במכשיר שלך.':'سيبقى حسابك مسجلاً على جهازك.',
+  'יצירת הצעה':'عرض جديد','תכנון וחיתוך':'التخطيط والتقطيع','לקוחות והצעות':'العملاء والعروض','העסק שלי':'إعدادات الورشة',
+  'מוסיפים לקוח':'إضافة عميل','שם, טלפון וסוג העבודה':'الاسم، الهاتف ونوع العمل',
+  'מתמחרים בקלות':'تسعير بسهولة','חומר, עבודה ותקורה':'المواد، العمل والتكاليف',
+  'שולחים וסוגרים':'إرسال وإغلاق الصفقة','PDF מקצועי ישר לוואטסאפ':'ملف PDF احترافي مباشرة إلى واتساب',
+  'הצעה מקצועית':'عرض احترافي','נשמרת אוטומטית':'حفظ تلقائي','מוכנה לוואטסאפ':'جاهز لواتساب',
+  'בואו נכין הצעה שהלקוח ירצה לאשר':'لنجهّز عرضاً يرغب العميل بالموافقة عليه',
+  'העלה תמונה — AI יעריך שטח חומר משוער להצעת מחיר מהירה':'ارفع صورة — سيقدّر الذكاء الاصطناعي مساحة المواد لعرض سريع',
+  'נתח תמונה עם AI':'حلّل الصورة بالذكاء الاصطناعي','בחירת קובץ':'اختيار صورة',
+  'שם לקוח':'اسم العميل','טלפון לקוח (לתזכורות בוואטסאפ)':'هاتف العميل (لتذكيرات واتساب)',
+  'תיאור הפרויקט':'وصف المشروع','סוג חומר':'نوع المادة','שטח חומר משוער (מ״ר)':'مساحة المواد التقديرية (م²)',
+  'קח שטח מדוח החיתוך':'استخدم المساحة من تقرير التقطيع','עלות פרזול (ידיות, צירים וכו׳)':'تكلفة الإكسسوارات (مقابض، مفصلات وغيرها)',
+  'תכנון, ייצור ותקורה':'تخطيط، تصنيع وتكاليف عامة','חישוב אוטומטי לפי אחוז':'حساب تلقائي حسب النسبة',
+  'הזנת סכום ידני':'إدخال مبلغ يدوياً','פירוק שעות עבודה לפי שלב':'تفصيل ساعات العمل حسب المرحلة',
+  'הוסף שלב עבודה':'أضف مرحلة عمل','הערות להצעה (אופציונלי)':'ملاحظات العرض (اختياري)',
+  'שמור הצעת מחיר':'حفظ عرض السعر','שמור שינויים':'حفظ التعديلات','הורד הצעה כ־PDF':'تحميل العرض PDF',
+  'שלח PDF בוואטסאפ':'إرسال PDF عبر واتساب','פירוק מידות לעבודה — דוח חיתוך מלא':'تفصيل المقاسات للعمل — تقرير تقطيع كامل',
+  'הלקוחות וההצעות שלי':'عملائي وعروض الأسعار','הגדרות עסק ומחירון':'إعدادات الورشة والتسعير',
+  'שם העסק':'اسم الورشة','טלפון העסק':'هاتف الورشة','לוגו העסק':'شعار الورشة','שמור הגדרות':'حفظ الإعدادات',
+  'מחירון חומרים':'أسعار المواد','הוסף חומר':'إضافة مادة','מחיר למ״ר':'السعر للمتر المربع',
+  'שעות עבודה':'ساعات العمل','מע״מ':'ضريبة القيمة المضافة','פחת חומר':'هدر المواد',
+  'תשלומים':'الدفعات','אין תשלומים רשומים עדיין':'لا توجد دفعات مسجلة بعد','הוסף תשלום':'إضافة دفعة',
+  'סכום':'المبلغ','הערה (אופציונלי)':'ملاحظة (اختياري)','נסח תזכורת גביה עם AI':'صياغة تذكير دفع بالذكاء الاصطناعي',
+  'מנסח הודעה...':'جاري صياغة الرسالة...','נוסח AI מוכן':'نص الذكاء الاصطناعي جاهز','נוסח מקצועי מוכן':'نص احترافي جاهز',
+  'העתק':'نسخ','הועתק':'تم النسخ','פתח בוואטסאפ':'فتح في واتساب','וואטסאפ':'واتساب',
+  'ערוך':'تعديل','מחק':'حذف','הצעת מחיר':'عرض سعر','בייצור':'قيد التصنيع','נמסר':'تم التسليم',
+  'הצעות פתוחות':'عروض مفتوحة','עבודות בייצור':'أعمال قيد التصنيع','שווי הצעות':'قيمة العروض',
+  'הלקוח הראשון מתחיל בהצעה טובה':'أول عميل يبدأ بعرض جيد',
+  'עדיין אין הצעות שמורות. הכינו הצעה מקצועית ושלחו אותה ישירות בוואטסאפ.':'لا توجد عروض محفوظة بعد. أنشئ عرضاً احترافياً وأرسله مباشرة عبر واتساب.',
+  'יצירת הצעה חדשה':'إنشاء عرض جديد','טוען נתונים':'جاري تحميل البيانات',
+  'הדפס / שמור כ-PDF':'طباعة / حفظ PDF','סגור':'إغلاق','הסר':'إزالة',
+  'לדוגמה: אחמד / דוד כהן':'مثال: أحمد / محمد','לדוגמה: ארון מטבח + איי':'مثال: خزائن مطبخ مع جزيرة',
+  'לדוגמה: זמן אספקה 14 יום, כולל התקנה':'مثال: مدة التسليم 14 يوماً، تشمل التركيب',
+  'לפחות 6 תווים':'6 أحرف على الأقل','החלפת שפה':'تغيير اللغة','ניווט ראשי':'التنقل الرئيسي',
+  'שגיאה בשמירת הגדרות':'خطأ في حفظ الإعدادات','שגיאה בשמירת ההזמנה':'خطأ في حفظ العرض',
+  'הזן שם לקוח לפני השמירה':'أدخل اسم العميل قبل الحفظ','לא ניתן לשמור הצעת מחיר בסכום אפס':'لا يمكن حفظ عرض بقيمة صفر',
+  'התשלום נרשם':'تم تسجيل الدفعة','ההגדרות נשמרו':'تم حفظ الإعدادات','השינויים נשמרו':'تم حفظ التعديلات'
+};
+let currentLanguage = localStorage.getItem('carpentry_quotes_language') || 'he';
+const i18nOriginalText = new WeakMap();
+const i18nOriginalAttrs = new WeakMap();
+let i18nObserver;
+
+function translateUiValue(value){
+  let result = value;
+  Object.entries(AR_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length).forEach(([he,ar])=>{ result=result.split(he).join(ar); });
+  return result;
+}
+function translateUiTree(root){
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let node;
+  while(node=walker.nextNode()){
+    if(node.parentElement?.closest('script,style')) continue;
+    if(!i18nOriginalText.has(node)) i18nOriginalText.set(node,node.nodeValue);
+    const original=i18nOriginalText.get(node);
+    node.nodeValue=currentLanguage==='ar'?translateUiValue(original):original;
+  }
+  const elements=(root.nodeType===1?[root]:[]).concat(Array.from(root.querySelectorAll?.('*')||[]));
+  elements.forEach(el=>{
+    const saved=i18nOriginalAttrs.get(el)||{};
+    ['placeholder','title','aria-label'].forEach(attr=>{
+      if(el.hasAttribute?.(attr) && !(attr in saved)) saved[attr]=el.getAttribute(attr);
+      if(attr in saved) el.setAttribute(attr,currentLanguage==='ar'?translateUiValue(saved[attr]):saved[attr]);
+    });
+    i18nOriginalAttrs.set(el,saved);
+  });
+}
+function applyLanguage(lang){
+  currentLanguage=lang==='ar'?'ar':'he';
+  localStorage.setItem('carpentry_quotes_language',currentLanguage);
+  document.documentElement.lang=currentLanguage;
+  document.documentElement.dir='rtl';
+  i18nObserver?.disconnect();
+  translateUiTree(document.body);
+  const toggle=document.getElementById('langToggle');
+  if(toggle){toggle.textContent=currentLanguage==='ar'?'עברית':'العربية';toggle.setAttribute('aria-label',currentLanguage==='ar'?'تغيير اللغة':'החלפת שפה');}
+  i18nObserver?.observe(document.body,{childList:true,subtree:true,characterData:true});
+}
+function toggleLanguage(){ applyLanguage(currentLanguage==='he'?'ar':'he'); }
+i18nObserver=new MutationObserver(mutations=>{
+  i18nObserver.disconnect();
+  mutations.forEach(m=>{
+    if(m.type==='characterData'){
+      i18nOriginalText.set(m.target,m.target.nodeValue);
+      if(currentLanguage==='ar') m.target.nodeValue=translateUiValue(m.target.nodeValue);
+    }
+    m.addedNodes.forEach(n=>{if(n.nodeType===1||n.nodeType===3) translateUiTree(n.nodeType===3?n.parentNode:n);});
+  });
+  i18nObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+});
+applyLanguage(currentLanguage);
+
+</script>
 <script src="/vendor/html2pdf.bundle.min.js"></script>
 <style>
   :root{
@@ -381,6 +490,11 @@
   .skeleton{padding:24px}.skeleton-line{height:13px;border-radius:7px;margin-bottom:13px;background:linear-gradient(90deg,#EEF1EF 25%,#F8F9F8 50%,#EEF1EF 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}.skeleton-line.short{width:48%}.skeleton-block{height:120px;border-radius:13px;margin-top:22px;background:linear-gradient(90deg,#EEF1EF 25%,#F8F9F8 50%,#EEF1EF 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}@keyframes shimmer{to{background-position:-200% 0}}.toast{border-radius:12px;box-shadow:0 12px 30px rgba(20,25,22,.22);padding:12px 20px}
   @media(max-width:860px){header.topbar{margin:0;border-radius:0 0 20px 20px;padding:18px 16px}.brand-mark{width:44px;height:44px}.header-value{display:none}nav.tabs{position:fixed;top:auto;bottom:0;inset-inline:8px;margin:0;padding:5px;z-index:60;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(25,31,28,.12)}nav.tabs button{flex-direction:column;gap:1px;min-height:56px;padding:5px 3px;font-size:.7rem}nav.tabs button .tab-icon{font-size:1.05rem}main{padding:18px 12px 90px}.grid2{grid-template-columns:1fr}.journey{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:3px}.journey-step{min-width:82%;scroll-snap-align:start}.trust-row{overflow-x:auto;flex-wrap:nowrap}.trust-chip{white-space:nowrap}.panel-body{padding:17px}.panel h2{padding:16px 17px}.row2{gap:0}.actions-row{grid-template-columns:1fr}.quote-paper{position:static}.summary-grid{gap:8px}.summary-card{padding:13px}.summary-card strong{font-size:1.25rem}.order-card{padding:15px}.order-right{grid-template-columns:1fr 1fr}.auth-card input{font-size:16px}}
   @media(max-width:430px){header.topbar h1{font-size:1.05rem}.brand-wrap{gap:10px}.brand-mark{width:40px;height:40px;border-radius:11px}.account-actions{margin-inline-start:auto}.journey-step{min-width:88%}.summary-grid{grid-template-columns:1fr 1fr}.auth-story{padding-top:24px}.auth-card{padding-top:26px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+  .lang-toggle{position:relative;z-index:2;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font:700 13px inherit;min-width:76px;transition:.18s}
+  .lang-toggle:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55)}
+  html[lang="ar"] body{font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+  @media(max-width:430px){.lang-toggle{padding:7px 9px;min-width:62px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -400,6 +514,7 @@
         <div class="biz" id="bizSubtitle">הגדר את שם העסק שלך בהגדרות המחירון</div>
       </div></div>
       <div class="header-value"><strong>מהתמונה להצעה מקצועית</strong>פחות התעסקות בניירת, יותר זמן לעבוד ולסגור לקוחות.</div>
+      <button class="lang-toggle no-print" id="langToggle" type="button" onclick="toggleLanguage()" aria-label="החלפת שפה">العربية</button>
       <div class="account-actions" id="accountActions" style="display:none"><span class="account-name" id="accountName"></span><button class="logout-btn" onclick="signOut()">יציאה</button></div>
     </div>
   </header>
