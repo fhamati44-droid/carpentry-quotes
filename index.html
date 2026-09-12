@@ -391,6 +391,8 @@
   @media(max-width:430px){.lang-toggle{padding:7px 9px;min-width:62px;font-size:12px}}
 
 
+.auth-confirm{display:none;text-align:center;padding:26px 8px 8px}.auth-confirm.show{display:block;animation:authConfirmIn .25s ease}.auth-confirm-icon{width:62px;height:62px;margin:0 auto 16px;display:grid;place-items:center;border-radius:20px;background:#FFF0E1;color:#A65318;font-size:28px}.auth-confirm h3{margin:0 0 10px;font-size:23px;color:var(--ink)}.auth-confirm p{margin:0 auto 20px;max-width:390px;color:var(--ink-soft);line-height:1.7}@keyframes authConfirmIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:860px){html,body{width:100%;max-width:100%;overflow-x:hidden}.app{width:100%;max-width:100%}nav.tabs{width:calc(100% - 16px);right:8px;left:8px;bottom:max(8px,env(safe-area-inset-bottom));box-sizing:border-box}nav.tabs button{min-width:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.1}nav.tabs button .tab-icon{display:block;font-size:18px;line-height:1}nav.tabs button span:last-child{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}header.topbar .row{display:grid;grid-template-columns:minmax(0,1fr) auto auto}.brand-wrap,.brand-wrap>div:last-child{min-width:0}header.topbar h1,.biz{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-name{display:none}}
 /* ===== Studio SaaS UI v3 — visual layer only ===== */
 :root{
   --paper:#F6F4EF;
@@ -658,7 +660,7 @@ button.link{text-underline-offset:4px}
   <button class="lang-toggle auth-lang-toggle no-print" id="authLangToggle" type="button" onclick="toggleLanguage()" aria-label="החלפת שפה">العربية</button>
   <div class="auth-shell">
     <div class="auth-story"><div><div class="brand-mark">🪚</div><h1>העסק שלך,<br>מסודר במקום אחד</h1><p>מכינים הצעות מחיר מקצועיות, שומרים לקוחות ושולחים לוואטסאפ בלי ניירת מיותרת.</p></div><div class="auth-benefits"><div class="auth-benefit"><span>✓</span> כל ההצעות נשמרות בחשבון שלך</div><div class="auth-benefit"><span>✓</span> הנתונים שלך נפרדים ומאובטחים</div><div class="auth-benefit"><span>✓</span> עובד בנייד ובמחשב</div></div></div>
-    <div class="auth-card"><h2 id="authTitle">טוב שחזרת</h2><p class="auth-lead" id="authLead">התחבר כדי להמשיך להצעות המחיר שלך</p><div class="auth-switch" role="tablist"><button id="loginTab" class="active" type="button" onclick="setAuthMode('login')">כניסה</button><button id="signupTab" type="button" onclick="setAuthMode('signup')">יצירת משתמש</button></div><form id="authForm" onsubmit="submitAuth(event)"><div id="displayNameWrap" style="display:none"><label for="authDisplayName">שם הנגר / העסק</label><input id="authDisplayName" type="text" autocomplete="name" placeholder="לדוגמה: נגריית אלון"></div><label for="authEmail">שם משתמש (כתובת אימייל)</label><input id="authEmail" type="email" autocomplete="username" required placeholder="name@example.com"><label for="authPassword">סיסמה</label><div class="auth-password"><input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="לפחות 6 תווים"><button type="button" onclick="togglePassword()">הצג</button></div><button class="primary auth-submit" id="authSubmit" type="submit">כניסה לחשבון</button><div class="auth-error" id="authError" role="alert"></div><div class="auth-note">החשבון נשאר מחובר במכשיר שלך.</div></form></div>
+    <div class="auth-card"><h2 id="authTitle">טוב שחזרת</h2><p class="auth-lead" id="authLead">התחבר כדי להמשיך להצעות המחיר שלך</p><div class="auth-confirm" id="authConfirm" role="status" aria-live="polite"><div class="auth-confirm-icon">✉</div><h3 id="authConfirmTitle">בדוק את תיבת המייל</h3><p id="authConfirmText">שלחנו אליך קישור לאישור החשבון. לאחר הלחיצה תחזור ישירות לאתר.</p><button type="button" class="secondary" onclick="returnToLogin()">חזרה למסך הכניסה</button></div><div class="auth-switch" role="tablist"><button id="loginTab" class="active" type="button" onclick="setAuthMode('login')">כניסה</button><button id="signupTab" type="button" onclick="setAuthMode('signup')">יצירת משתמש</button></div><form id="authForm" onsubmit="submitAuth(event)"><div id="displayNameWrap" style="display:none"><label for="authDisplayName">שם הנגר / העסק</label><input id="authDisplayName" type="text" autocomplete="name" placeholder="לדוגמה: נגריית אלון"></div><label for="authEmail">שם משתמש (כתובת אימייל)</label><input id="authEmail" type="email" autocomplete="username" required placeholder="name@example.com"><label for="authPassword">סיסמה</label><div class="auth-password"><input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="לפחות 6 תווים"><button type="button" onclick="togglePassword()">הצג</button></div><button class="primary auth-submit" id="authSubmit" type="submit">כניסה לחשבון</button><div class="auth-error" id="authError" role="alert"></div><div class="auth-note">החשבון נשאר מחובר במכשיר שלך.</div></form></div>
   </div>
 </section>
 <div class="app" id="appRoot">
@@ -687,7 +689,7 @@ button.link{text-underline-offset:4px}
 
     <!-- TAB: QUOTE (price only) -->
     <section id="tab-quote">
-      <div class="journey no-print"><div class="journey-step"><b>1</b><span><strong>מוסיפים לקוח</strong>שם, טלפון וסוג העבודה</span></div><div class="journey-step"><b>2</b><span><strong>מתמחרים בקלות</strong>חומר, עבודה ותקורה</span></div><div class="journey-step"><b>3</b><span><strong>שולחים וסוגרים</strong>PDF מקצועי ישר לוואטסאפ</span></div></div>
+      <div class="journey no-print"><div class="journey-step"><b>1</b><span><strong>מוסיפים לקוח</strong>שם, טלפון וסוג העבודה</span></div><div class="journey-step"><b>2</b><span><strong>מתמחרים בקלות</strong>חומר, פרזול ועבודה</span></div><div class="journey-step"><b>3</b><span><strong>שולחים וסוגרים</strong>PDF מקצועי ישר לוואטסאפ</span></div></div>
       <div class="trust-row no-print"><span class="trust-chip">✓ הצעה מקצועית</span><span class="trust-chip">✓ נשמרת אוטומטית</span><span class="trust-chip">✓ מוכנה לוואטסאפ</span></div>
       <div class="grid2">
         <div class="panel no-print">
@@ -726,24 +728,8 @@ button.link{text-underline-offset:4px}
             <button class="link" onclick="copyAreaFromCutlist()">📋 קח שטח מדוח החיתוך</button>
             <div class="hint" id="cutlistAreaRefHint"></div>
 
-            <div class="row2">
-              <div>
-                <label>עלות פרזול (ידיות, צירים וכו׳)</label>
-                <input type="number" id="hardwareCost" min="0" placeholder="0">
-              </div>
-              <div>
-                <label for="overheadMode">תכנון, ייצור ותקורה</label>
-                <select id="overheadMode" onchange="toggleOverheadMode();renderPreview()">
-                  <option value="percent">חישוב אוטומטי לפי אחוז</option>
-                  <option value="manual">הזנת סכום ידני</option>
-                </select>
-              </div>
-            </div>
-            <div id="manualOverheadWrap" style="display:none;">
-              <label for="manualOverhead">סכום תכנון, ייצור ותקורה (₪)</label>
-              <input type="number" id="manualOverhead" min="0" placeholder="0">
-              <div class="hint">הסכום מתווסף לעלות החומר, הפרזול והעבודה לפני מע״מ.</div>
-            </div>
+            <label>עלות פרזול (ידיות, צירים וכו׳)</label>
+            <input type="number" id="hardwareCost" min="0" placeholder="0">
 
             <label>פירוק שעות עבודה לפי שלב</label>
             <div id="workStagesList"></div>
@@ -856,14 +842,6 @@ button.link{text-underline-offset:4px}
               <input type="number" id="setLaborRate" min="0">
               <label class="checkbox-label"><input type="checkbox" id="setShowLabor"> הצג פירוט עבודה ללקוח בהצעה</label>
             </div>
-            <div>
-              <label>אחוז רווח + הוצאות תקורה (%)</label>
-              <input type="number" id="setOverhead" min="0">
-              <label class="checkbox-label"><input type="checkbox" id="setShowOverhead"> הצג שורת רווח+תקורה ללקוח בהצעה</label>
-            </div>
-          </div>
-          <div class="hint">גם כשמוסתר, הסכום עדיין מחושב וכלול בסה״כ — זה משפיע רק על מה שהלקוח רואה בהצעה המודפסת.</div>
-
           <div class="row2">
             <div>
               <label>מע״מ / VAT (%)</label>
@@ -1003,7 +981,6 @@ const DEFAULT_SETTINGS = {
   bizPhone: "",
   bizLogo: "",
   laborRate: 60,
-  overheadPct: 30,
   vatPct: 18,
   wastePct: 10,
   edgeThicknessMm: 1.3,
@@ -1014,7 +991,6 @@ const DEFAULT_SETTINGS = {
   trimAllowanceMm: 3,
   plinthHeightMm: 100,
   showLaborInQuote: true,
-  showOverheadInQuote: false,
   materials: [
     {id: "m1", name: "MDF לבן", price: 90},
     {id: "m2", name: "פורניר אלון", price: 180},
@@ -1033,6 +1009,8 @@ function showToast(msg){
 
 function setAuthMode(mode){
   authMode = mode;
+  document.getElementById('authConfirm').classList.remove('show');
+  document.getElementById('authForm').style.display='block';
   const signup = mode === 'signup';
   document.getElementById('loginTab').classList.toggle('active', !signup);
   document.getElementById('signupTab').classList.toggle('active', signup);
@@ -1043,6 +1021,12 @@ function setAuthMode(mode){
   document.getElementById('authPassword').autocomplete = signup ? 'new-password' : 'current-password';
   document.getElementById('authError').classList.remove('show');
 }
+
+function showEmailSentState(){
+  document.getElementById('authForm').style.display='none';
+  document.getElementById('authConfirm').classList.add('show');
+}
+function returnToLogin(){ setAuthMode('login'); document.getElementById('authEmail').focus(); }
 
 function togglePassword(){
   const input = document.getElementById('authPassword');
@@ -1068,9 +1052,9 @@ async function submitAuth(event){
   const errorBox = document.getElementById('authError');
   button.disabled = true; button.textContent = 'רגע אחד...'; errorBox.classList.remove('show');
   try{
-    const result = authMode === 'signup' ? await supabaseClient.auth.signUp({email,password,options:{data:{display_name:displayName}}}) : await supabaseClient.auth.signInWithPassword({email,password});
+    const result = authMode === 'signup' ? await supabaseClient.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:window.location.origin+'/?email_confirmed=1'}}) : await supabaseClient.auth.signInWithPassword({email,password});
     if(result.error) throw result.error;
-    if(authMode === 'signup' && !result.data.session){ errorBox.textContent = 'החשבון נוצר. שלחנו אליך אימייל לאישור — לאחר האישור אפשר להיכנס.'; errorBox.style.background='#EEF7F1'; errorBox.style.color='#287044'; errorBox.classList.add('show'); }
+    if(authMode === 'signup' && !result.data.session){ showEmailSentState(); }
   }catch(error){ errorBox.textContent = authMessage(error); errorBox.style.background=''; errorBox.style.color=''; errorBox.classList.add('show'); }
   finally{ button.disabled=false; button.textContent = authMode === 'signup' ? 'יצירת חשבון' : 'כניסה לחשבון'; }
 }
@@ -1097,7 +1081,6 @@ async function loadSettings(){
     settings.materials = structuredCloneSafe(DEFAULT_SETTINGS.materials);
   }
   if(typeof settings.showLaborInQuote !== 'boolean') settings.showLaborInQuote = true;
-  if(typeof settings.showOverheadInQuote !== 'boolean') settings.showOverheadInQuote = false;
   if(typeof settings.wastePct !== 'number') settings.wastePct = DEFAULT_SETTINGS.wastePct;
   if(typeof settings.edgeThicknessMm !== 'number') settings.edgeThicknessMm = DEFAULT_SETTINGS.edgeThicknessMm;
   if(typeof settings.sheetWidthCm !== 'number') settings.sheetWidthCm = DEFAULT_SETTINGS.sheetWidthCm;
@@ -1472,20 +1455,12 @@ function calcQuote(){
   const materialCost = areaM2 * (material ? material.price : 0);
   const laborCost = hours * settings.laborRate;
   const subtotal = materialCost + hardware + laborCost;
-  const overheadMode = document.getElementById('overheadMode')?.value || 'percent';
-  const manualOverhead = parseFloat(document.getElementById('manualOverhead')?.value) || 0;
-  const overheadAmount = overheadMode==='manual' ? manualOverhead : subtotal * (settings.overheadPct/100);
-  const preVat = subtotal + overheadAmount;
-  const vatAmount = preVat * (settings.vatPct/100);
-  const total = preVat + vatAmount;
+  const vatAmount = subtotal * (settings.vatPct/100);
+  const total = subtotal + vatAmount;
 
-  return {material, areaM2, materialCost, hardware, laborCost, hours, subtotal, overheadMode, overheadAmount, preVat, vatAmount, total};
+  return {material, areaM2, materialCost, hardware, laborCost, hours, subtotal, vatAmount, total};
 }
 
-function toggleOverheadMode(){
-  const manual=document.getElementById('overheadMode').value==='manual';
-  document.getElementById('manualOverheadWrap').style.display=manual?'block':'none';
-}
 
 function copyAreaFromCutlist(){
   const raw = getRawAreaM2();
@@ -1522,10 +1497,6 @@ function renderPreview(){
     ? (stageLines || `<div class="qline"><span class="lbl">עבודה (${c.hours||0} שעות)</span><span class="val">₪${fmt(c.laborCost)}</span></div>`)
     : '';
 
-  const overheadLine = c.overheadAmount>0
-    ? `<div class="qline"><span class="lbl">תכנון, ייצור ותקורה${c.overheadMode==='percent'&&settings.showOverheadInQuote?' ('+settings.overheadPct+'%)':''}</span><span class="val">₪${fmt(c.overheadAmount)}</span></div>`
-    : '';
-
   const panel = document.getElementById('quotePreviewPanel');
   const quoteNumber = editingQuoteId ? (quotes.find(q=>q.id===editingQuoteId)?.quoteNumber||nextQuoteNumber()) : nextQuoteNumber();
   panel.innerHTML = `
@@ -1545,7 +1516,6 @@ function renderPreview(){
       <div class="qline"><span class="lbl">חומר (${c.areaM2.toFixed(2)} מ״ר)</span><span class="val">₪${fmt(c.materialCost)}</span></div>
       <div class="qline"><span class="lbl">פרזול</span><span class="val">₪${fmt(c.hardware)}</span></div>
       ${laborLine}
-      ${overheadLine}
       <div class="qline"><span class="lbl">מע״מ (${settings.vatPct}%)</span><span class="val">₪${fmt(c.vatAmount)}</span></div>
       ${notes ? `<div class="qline" style="border:none;"><span class="lbl">הערות</span><span class="val" style="font-weight:400;">${escapeHtml(notes)}</span></div>` : ''}
     </div>
@@ -1653,7 +1623,7 @@ async function shareCurrentQuotePdf(){
   }catch(e){if(e.name!=='AbortError')showToast('לא ניתן לשתף — נסה להוריד את ה־PDF');}
 }
 
-['clientName','projectName','materialSelect','hardwareCost','overheadMode','manualOverhead','notes'].forEach(id=>{
+['clientName','projectName','materialSelect','hardwareCost','notes'].forEach(id=>{
   document.addEventListener('input', (e)=>{ if(e.target.id===id) renderPreview(); });
   document.addEventListener('change', (e)=>{ if(e.target.id===id) renderPreview(); });
 });
@@ -1994,8 +1964,6 @@ async function saveQuote(){
     cutlistRawAreaM2: getRawAreaM2(),
     materialName: c.material ? c.material.name : '',
     hardware: c.hardware,
-    overheadMode: c.overheadMode,
-    manualOverhead: c.overheadMode==='manual' ? c.overheadAmount : 0,
     hardwareItems: getValidHardwareItems(),
     workStages: workStages.filter(s=>s.name.trim() && parseFloat(s.hours)>0),
     hours: c.hours,
@@ -2015,9 +1983,6 @@ async function saveQuote(){
   document.getElementById('clientPhone').value='';
   document.getElementById('projectName').value='';
   document.getElementById('hardwareCost').value='';
-  document.getElementById('overheadMode').value='percent';
-  document.getElementById('manualOverhead').value='';
-  toggleOverheadMode();
   document.getElementById('materialArea').value='';
   document.getElementById('projectPlinthHeight').value='';
   document.getElementById('projectDepth').value='';
@@ -2083,9 +2048,6 @@ function editQuote(id){
   document.getElementById('projectName').value=q.projectName||'';
   document.getElementById('materialArea').value=q.materialAreaM2||'';
   document.getElementById('hardwareCost').value=q.hardware||'';
-  document.getElementById('overheadMode').value=q.overheadMode||'percent';
-  document.getElementById('manualOverhead').value=q.manualOverhead||'';
-  toggleOverheadMode();
   document.getElementById('notes').value=q.notes||'';
   const mat=settings.materials.find(m=>m.name===q.materialName); if(mat) document.getElementById('materialSelect').value=mat.id;
   parts=(q.parts&&q.parts.length)?structuredCloneSafe(q.parts):[blankPart()];
@@ -2227,7 +2189,6 @@ function renderSettingsForm(){
   document.getElementById('setBizName').value = settings.bizName || '';
   document.getElementById('setBizPhone').value = settings.bizPhone || '';
   document.getElementById('setLaborRate').value = settings.laborRate;
-  document.getElementById('setOverhead').value = settings.overheadPct;
   document.getElementById('setVat').value = settings.vatPct;
   document.getElementById('setWastePct').value = settings.wastePct;
   document.getElementById('setEdgeThickness').value = settings.edgeThicknessMm;
@@ -2238,7 +2199,6 @@ function renderSettingsForm(){
   document.getElementById('setTrimAllowance').value = settings.trimAllowanceMm;
   document.getElementById('setPlinthHeight').value = settings.plinthHeightMm;
   document.getElementById('setShowLabor').checked = !!settings.showLaborInQuote;
-  document.getElementById('setShowOverhead').checked = !!settings.showOverheadInQuote;
   editingMaterialsDraft = structuredCloneSafe(settings.materials);
   renderMaterialsSettingsList();
 }
@@ -2298,7 +2258,6 @@ async function saveSettings(){
   settings.bizName = document.getElementById('setBizName').value.trim();
   settings.bizPhone = document.getElementById('setBizPhone').value.trim();
   settings.laborRate = parseFloat(document.getElementById('setLaborRate').value) || 0;
-  settings.overheadPct = parseFloat(document.getElementById('setOverhead').value) || 0;
   settings.vatPct = parseFloat(document.getElementById('setVat').value) || 0;
   settings.wastePct = parseFloat(document.getElementById('setWastePct').value) || 0;
   settings.edgeThicknessMm = parseFloat(document.getElementById('setEdgeThickness').value) || 0;
@@ -2309,14 +2268,12 @@ async function saveSettings(){
   settings.trimAllowanceMm = parseFloat(document.getElementById('setTrimAllowance').value) || 0;
   settings.plinthHeightMm = parseFloat(document.getElementById('setPlinthHeight').value) || 0;
   settings.showLaborInQuote = document.getElementById('setShowLabor').checked;
-  settings.showOverheadInQuote = document.getElementById('setShowOverhead').checked;
   settings.materials = editingMaterialsDraft.filter(m=>m.name.trim().length>0);
   if(!settings.materials.length) settings.materials = structuredCloneSafe(DEFAULT_SETTINGS.materials);
   const saved = await persistSettings();
   if(!saved) return;
   renderHeader();
   renderMaterialSelect();
-  toggleOverheadMode();
   renderPreview();
   showToast('ההגדרות נשמרו ✓');
 }
@@ -2344,6 +2301,7 @@ async function bootApp(){
 }
 
 (async function init(){
+  const authReturn=new URLSearchParams(location.search).has('code')||new URLSearchParams(location.search).get('email_confirmed')==='1'||location.hash.includes('access_token');
   await configureSupabase();
   if(!supabaseClient){
     document.getElementById('setupBanner').classList.add('show');
@@ -2355,6 +2313,11 @@ async function bootApp(){
   const {data:{session}} = await supabaseClient.auth.getSession();
   supabaseClient.auth.onAuthStateChange((event,nextSession)=>setTimeout(()=>applySession(nextSession),0));
   await applySession(session);
+  if(authReturn){
+    if(session) setTimeout(()=>showToast('האימייל אושר בהצלחה — ברוך הבא ✓'),300);
+    else{setAuthMode('login');const box=document.getElementById('authError');box.textContent='האימייל אושר. עכשיו אפשר להיכנס לחשבון.';box.style.background='#EEF7F1';box.style.color='#287044';box.classList.add('show');}
+    history.replaceState({},document.title,location.pathname);
+  }
 })();
 
 const AR_TRANSLATIONS = {
@@ -2513,7 +2476,13 @@ const AR_TRANSLATIONS = {
   "הלוגו הוסר — לחץ שמור הגדרות":"تم حذف الشعار — اضغط حفظ الإعدادات",
   "מ״ר":"م²",
   "ס״מ":"سم",
-  "מ״מ":"مم"
+  "מ״מ":"مم",
+'בדוק את תיבת המייל':'تحقق من بريدك الإلكتروني',
+  'שלחנו אליך קישור לאישור החשבון. לאחר הלחיצה תחזור ישירות לאתר.':'أرسلنا إليك رابط تأكيد الحساب. بعد الضغط عليه ستعود مباشرة إلى الموقع.',
+  'חזרה למסך הכניסה':'العودة إلى تسجيل الدخول',
+  'האימייל אושר. עכשיו אפשר להיכנס לחשבון.':'تم تأكيد البريد الإلكتروني. يمكنك الآن تسجيل الدخول.',
+  'האימייל אושר בהצלחה — ברוך הבא ✓':'تم تأكيد البريد الإلكتروني بنجاح — أهلاً بك ✓',
+  'חומר, פרזול ועבודה':'المواد، الإكسسوارات والعمل'
 };
 let currentLanguage = localStorage.getItem('carpentry_quotes_language') || 'he';
 const i18nOriginalText = new WeakMap();
