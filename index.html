@@ -1849,6 +1849,20 @@ async function addPayment(id){
   showToast('התשלום נרשם ✓');
 }
 
+function fallbackReminder(q, remaining){
+  const business = settings?.bizName ? ` מ${settings.bizName}` : '';
+  return `שלום ${q.clientName}, מה שלומך? תזכורת קצרה${business} לגבי יתרת התשלום עבור ${q.projectName}, בסך ₪${fmt(remaining)}. נשמח להסדיר את התשלום בזמן שנוח לך. תודה רבה 🙏`;
+}
+
+function showReminderResult(q, id, text){
+  document.getElementById('remResult-'+id).innerHTML = `
+    <div class="rem-text">${escapeHtml(text)}</div>
+    <div class="rem-actions">
+      <button class="secondary" onclick="copyText(this,'${escapeForJs(text)}')">העתק</button>
+      ${q.clientPhone ? `<a class="secondary" style="display:inline-block;text-decoration:none;text-align:center;" target="_blank" rel="noopener" href="https://wa.me/${normalizeWhatsAppPhone(q.clientPhone) || q.clientPhone.replace(/\\D/g,'')}?text=${encodeURIComponent(text)}">פתח בוואטסאפ</a>` : ''}
+    </div>`;
+}
+
 async function generateReminder(id){
   const q = quotes.find(x=>x.id===id);
   if(!q) return;
@@ -1872,17 +1886,15 @@ async function generateReminder(id){
         messages: [{role: "user", content: prompt}]
       })
     });
-    const data = await response.json();
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error || 'AI_UNAVAILABLE');
     const text = (data.choices?.[0]?.message?.content || '').trim();
-    document.getElementById('remResult-'+id).innerHTML = `
-      <div class="rem-text">${escapeHtml(text)}</div>
-      <div class="rem-actions">
-        <button class="secondary" onclick="copyText(this,'${escapeForJs(text)}')">העתק</button>
-        ${q.clientPhone ? `<a class="secondary" style="display:inline-block;text-decoration:none;text-align:center;" target="_blank" href="https://wa.me/${q.clientPhone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}">פתח בוואטסאפ</a>` : ''}
-      </div>`;
-    statusEl.textContent = '';
+    if(!text) throw new Error('EMPTY_AI_RESPONSE');
+    showReminderResult(q, id, text);
+    statusEl.textContent = 'נוסח AI מוכן ✓';
   }catch(e){
-    statusEl.textContent = '⚠ הניסוח נכשל, נסה שוב';
+    showReminderResult(q, id, fallbackReminder(q, remaining));
+    statusEl.textContent = 'נוסח מקצועי מוכן ✓';
   }finally{
     btn.disabled = false;
   }
