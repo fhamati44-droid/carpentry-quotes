@@ -1758,7 +1758,7 @@ async function analyzeWithAIQuote(){
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
         max_tokens: 800,
         response_format: {type: "json_object"},
         messages: [{
@@ -1879,7 +1879,7 @@ async function analyzeWithAI(){
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
         max_tokens: 3000,
         response_format: {type: "json_object"},
         messages: [{
