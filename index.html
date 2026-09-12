@@ -698,6 +698,11 @@ button.link{text-underline-offset:4px}
               <div class="ai-box-head">📷 העלה תמונה — AI יעריך שטח חומר משוער להצעת מחיר מהירה</div>
               <input class="file-native" type="file" id="aiImageInputQ" accept="image/*"><label class="file-picker" for="aiImageInputQ">📷 בחר תמונה או צלם</label>
               <div id="aiImgPreviewWrapQ"></div>
+              <label style="margin-top:10px;">מידה ידועה אחת (משפר דיוק משמעותית) — אופציונלי</label>
+              <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;">
+                <input type="text" id="aiRefLabelQ" placeholder="לדוגמה: רוחב הפתח">
+                <input type="number" id="aiRefValueQ" placeholder="ס״מ">
+              </div>
               <button class="secondary" id="aiAnalyzeBtnQ" onclick="analyzeWithAIQuote()" disabled>נתח תמונה עם AI</button>
               <div id="aiStatusQ" class="ai-status"></div>
               <div id="aiResultBoxQ" class="ai-result" style="display:none;"></div>
@@ -775,6 +780,11 @@ button.link{text-underline-offset:4px}
             <div class="ai-box-head">📷 העלה תמונה — AI יבנה פירוק מלא לרשימת חלקים לחיתוך</div>
             <input class="file-native" type="file" id="aiImageInput" accept="image/*"><label class="file-picker" for="aiImageInput">📷 בחר תמונה או צלם</label>
             <div id="aiImgPreviewWrap"></div>
+            <label style="margin-top:10px;">מידה ידועה אחת (משפר דיוק משמעותית) — אופציונלי</label>
+            <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;">
+              <input type="text" id="aiRefLabel" placeholder="לדוגמה: רוחב הפתח">
+              <input type="number" id="aiRefValue" placeholder="ס״מ">
+            </div>
             <button class="secondary" id="aiAnalyzeBtn" onclick="analyzeWithAI()" disabled>נתח תמונה עם AI</button>
             <div id="aiStatus" class="ai-status"></div>
             <div id="aiResultBox" class="ai-result" style="display:none;"></div>
@@ -1719,7 +1729,12 @@ async function analyzeWithAIQuote(){
   statusEl.textContent = '🔎 מעריך שטח חומר... (כמה שניות)';
 
   const materialsList = settings.materials.map(m=>m.name).join(', ');
-  const prompt = `אתה נגר מומחה שנותן הערכה מהירה וגסה לצורך הצעת מחיר ראשונית ללקוח (לא דוח חיתוך מפורט).
+  const refLabelQ = document.getElementById('aiRefLabelQ').value.trim();
+  const refValueQ = document.getElementById('aiRefValueQ').value;
+  const refLineQ = (refLabelQ && refValueQ) ? `נקודת ייחוס מדויקת שהנגר מדד בעצמו: ${refLabelQ} = ${refValueQ} ס״מ. חובה להשתמש בזה לכיול קנה המידה, לא להעריך לפי עין בלבד.\n\n` : '';
+  const prompt = `${refLineQ}אתה נגר מומחה שנותן הערכה מהירה וגסה לצורך הצעת מחיר ראשונית ללקוח (לא דוח חיתוך מפורט).
+
+לפני שאתה מעריך מספרים, זהה במדויק: כמה דלתות/מגירות רואים, סוג הריהוט (ארון מטבח/חדר בגדים/מדפים פתוחים וכו'), וכל פרט חזותי אחר שיעזור לך להעריך נכון. רק אחרי זה עבור להערכת המידות.
 
 בהינתן התמונה של הרהיט/החלל:
 1. הערך מידות חיצוניות כוללות (רוחב, גובה, עומק בס״מ) — השתמש באלמנטים מוכרים בתמונה (ידיות דלת, גובה שיש מטבח סטנדרטי ~90 ס״מ וכו') לכיול קנה המידה.
@@ -1743,7 +1758,7 @@ async function analyzeWithAIQuote(){
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        model: "qwen/qwen3.8-27b",
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
         max_tokens: 800,
         response_format: {type: "json_object"},
         messages: [{
@@ -1811,7 +1826,12 @@ async function analyzeWithAI(){
 
   const materialsList = settings.materials.map(m=>m.name).join(', ');
   const sheetW = settings.sheetWidthCm*10, sheetL = settings.sheetLengthCm*10;
-  const prompt = `אתה נגר מומחה ומנוסה שמעריך פרויקט מתמונה ובונה עבורו רשימת חיתוך (פירוק מידות לעבודה) לפי שיטות בנייה סטנדרטיות בארונות ורהיט מובנה.
+  const refLabel = document.getElementById('aiRefLabel').value.trim();
+  const refValue = document.getElementById('aiRefValue').value;
+  const refLine = (refLabel && refValue) ? `נקודת ייחוס מדויקת שהנגר מדד בעצמו: ${refLabel} = ${refValue} ס״מ. חובה להשתמש בזה לכיול קנה המידה בתמונה — זה הרבה יותר מדויק מהערכה לפי עין.\n\n` : '';
+  const prompt = `${refLine}אתה נגר מומחה ומנוסה שמעריך פרויקט מתמונה ובונה עבורו רשימת חיתוך (פירוק מידות לעבודה) לפי שיטות בנייה סטנדרטיות בארונות ורהיט מובנה.
+
+לפני שאתה מעריך מספרים, זהה במדויק מתוך התמונה: כמה דלתות, כמה מגירות, כמה מדפים גלויים, סוג הידיות/פרזול הנראה, וסגנון הריהוט הכללי. ככל שתזהה נכון יותר את הפרטים החזותיים, כך פירוק החלקים יהיה מדויק יותר.
 
 נתוני ייצור קבועים לעבודה זו (לקוח את הנגר עצמו הגדיר בהגדרות שלו — השתמש בהם בדיוק):
 - עובי לוח ראשי: ${settings.boardThicknessMm} מ״מ
@@ -1859,7 +1879,7 @@ async function analyzeWithAI(){
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        model: "qwen/qwen3.8-27b",
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
         max_tokens: 3000,
         response_format: {type: "json_object"},
         messages: [{
