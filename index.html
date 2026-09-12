@@ -384,6 +384,9 @@
 
   .lang-toggle{position:relative;z-index:2;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font:700 13px inherit;min-width:76px;transition:.18s}
   .lang-toggle:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55)}
+  .file-native{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .file-picker{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin:10px 0;padding:10px 14px;border:1.5px solid var(--walnut-dark);border-radius:10px;background:#fff;color:var(--walnut-dark);font-weight:800;cursor:pointer;transition:.2s ease}
+  .file-picker:hover{background:#FFF6E9;border-color:var(--oak);transform:translateY(-1px)}
   html[lang="ar"] body{font-family:"Segoe UI",Tahoma,Arial,sans-serif}
   @media(max-width:430px){.lang-toggle{padding:7px 9px;min-width:62px;font-size:12px}}
 </style>
@@ -431,7 +434,7 @@
 
             <div id="aiBoxQ" class="ai-box">
               <div class="ai-box-head">📷 העלה תמונה — AI יעריך שטח חומר משוער להצעת מחיר מהירה</div>
-              <input type="file" id="aiImageInputQ" accept="image/*">
+              <input class="file-native" type="file" id="aiImageInputQ" accept="image/*"><label class="file-picker" for="aiImageInputQ">📷 בחר תמונה או צלם</label>
               <div id="aiImgPreviewWrapQ"></div>
               <button class="secondary" id="aiAnalyzeBtnQ" onclick="analyzeWithAIQuote()" disabled>נתח תמונה עם AI</button>
               <div id="aiStatusQ" class="ai-status"></div>
@@ -508,7 +511,7 @@
 
           <div id="aiBox" class="ai-box">
             <div class="ai-box-head">📷 העלה תמונה — AI יבנה פירוק מלא לרשימת חלקים לחיתוך</div>
-            <input type="file" id="aiImageInput" accept="image/*">
+            <input class="file-native" type="file" id="aiImageInput" accept="image/*"><label class="file-picker" for="aiImageInput">📷 בחר תמונה או צלם</label>
             <div id="aiImgPreviewWrap"></div>
             <button class="secondary" id="aiAnalyzeBtn" onclick="analyzeWithAI()" disabled>נתח תמונה עם AI</button>
             <div id="aiStatus" class="ai-status"></div>
@@ -563,7 +566,7 @@
           <div class="logo-upload">
             <img id="setBizLogoPreview" class="logo-preview" alt="תצוגה מקדימה של לוגו העסק">
             <div>
-              <input type="file" id="setBizLogo" accept="image/png,image/jpeg,image/webp">
+              <input class="file-native" type="file" id="setBizLogo" accept="image/png,image/jpeg,image/webp"><label class="file-picker" for="setBizLogo">🖼️ בחר לוגו</label>
               <div class="hint">מומלץ לוגו מרובע עם רקע שקוף. התמונה נשמרת בדפדפן ומופיעה בהצעה וב־PDF.</div>
               <button class="danger-link" type="button" onclick="removeBizLogo()" style="margin-top:8px;">הסר לוגו</button>
             </div>
@@ -1149,7 +1152,7 @@ function printCutList(){
 
   document.getElementById('cutlistPrintView').innerHTML = `
     <h1>🪚 דוח חיתוך מלא — לשימוש פנימי בנגריה</h1>
-    <div class="cl-sub">${escapeHtml(projectName)} · לקוח: ${escapeHtml(clientName)} · חומר: ${material?escapeHtml(material.name):'—'} · ${new Date().toLocaleDateString('he-IL')}</div>
+    <div class="cl-sub">${escapeHtml(projectName)} · לקוח: ${escapeHtml(clientName)} · חומר: ${material?escapeHtml(material.name):'—'} · ${new Date().toLocaleDateString(currentLanguage==='ar'?'ar':'he-IL')}</div>
     <div class="cl-meta-box">
       <div><span>פלטה סטנדרטית</span><b>${settings.sheetWidthCm}×${settings.sheetLengthCm} ס״מ</b></div>
       <div><span>עובי לוח ראשי</span><b>${settings.boardThicknessMm} מ״מ</b></div>
@@ -1234,7 +1237,7 @@ function renderPreview(){
   const clientName = document.getElementById('clientName').value || '—';
   const projectName = document.getElementById('projectName').value || 'פרויקט ללא שם';
   const notes = document.getElementById('notes').value;
-  const today = new Date().toLocaleDateString('he-IL');
+  const today = new Date().toLocaleDateString(currentLanguage==='ar'?'ar':'he-IL');
   const validParts = getValidParts();
 
   const stageLines = settings.showLaborInQuote
@@ -1297,7 +1300,8 @@ function nextQuoteNumber(){
 }
 
 function quoteWhatsAppText(q){
-  return `שלום ${q.clientName},\nמצורפת הצעת מחיר ${q.quoteNumber ? 'מספר '+q.quoteNumber+' ' : ''}עבור ${q.projectName}.\nסה״כ לתשלום: ₪${fmt(q.total)}${q.validUntil ? `\nההצעה בתוקף עד ${new Date(q.validUntil).toLocaleDateString('he-IL')}` : ''}.\n${settings.bizName || 'נגרות'}${settings.bizPhone ? ` | ${settings.bizPhone}` : ''}`;
+  if(currentLanguage==='ar') return `مرحباً ${q.clientName}،\nمرفق عرض السعر ${q.quoteNumber ? 'رقم '+q.quoteNumber+' ' : ''}لمشروع ${q.projectName}.\nالإجمالي للدفع: ₪${fmt(q.total)}${q.validUntil ? `\nالعرض صالح حتى ${new Date(q.validUntil).toLocaleDateString('ar')}` : ''}.\n${settings.bizName || 'ورشة نجارة'}${settings.bizPhone ? ` | ${settings.bizPhone}` : ''}`;
+  return `שלום ${q.clientName},\nמצורפת הצעת מחיר ${q.quoteNumber ? 'מספר '+q.quoteNumber+' ' : ''}עבור ${q.projectName}.\nסה״כ לתשלום: ₪${fmt(q.total)}${q.validUntil ? `\nההצעה בתוקף עד ${new Date(q.validUntil).toLocaleDateString(currentLanguage==='ar'?'ar':'he-IL')}` : ''}.\n${settings.bizName || 'נגרות'}${settings.bizPhone ? ` | ${settings.bizPhone}` : ''}`;
 }
 
 function openWhatsApp(phone, text){
@@ -1461,7 +1465,7 @@ async function analyzeWithAIQuote(){
 
 החזר אך ורק JSON תקין (בלי טקסט נוסף, בלי מרקדאון) במבנה:
 {
-  "item_description": "תיאור קצר (בעברית)",
+  "item_description": "תיאור קצר (${currentLanguage==='ar'?'בערבית':'בעברית'})",
   "estimated_overall_width_cm": מספר,
   "estimated_overall_height_cm": מספר,
   "estimated_overall_depth_cm": מספר,
@@ -1565,7 +1569,7 @@ async function analyzeWithAI(){
 
 החזר אך ורק JSON תקין (בלי טקסט נוסף, בלי מרקדאון, בלי גדרות קוד) במבנה הבא:
 {
-  "item_description": "תיאור קצר של מה שרואים בתמונה (בעברית)",
+  "item_description": "תיאור קצר של מה שרואים בתמונה (${currentLanguage==='ar'?'בערבית':'בעברית'})",
   "estimated_overall_width_cm": מספר,
   "estimated_overall_height_cm": מספר,
   "estimated_overall_depth_cm": מספר,
@@ -1761,7 +1765,7 @@ function renderOrders(){
   const value=quotes.reduce((sum,q)=>sum+(Number(q.total)||0),0);
   const summary=`<div class="summary-grid"><div class="summary-card"><span>הצעות פתוחות</span><strong>${openQuotes}</strong></div><div class="summary-card"><span>עבודות בייצור</span><strong>${production}</strong></div><div class="summary-card"><span>שווי הצעות</span><strong>₪${fmt(value)}</strong></div></div>`;
   wrap.innerHTML = summary + quotes.map(q=>{
-    const d = new Date(q.date).toLocaleDateString('he-IL');
+    const d = new Date(q.date).toLocaleDateString(currentLanguage==='ar'?'ar':'he-IL');
     const paid = paidSum(q);
     const remaining = Math.max(0, q.total - paid);
     const pct = q.total>0 ? Math.min(100, Math.round(paid/q.total*100)) : 0;
@@ -1771,7 +1775,7 @@ function renderOrders(){
       <div class="order-card" onclick="toggleExpand('${q.id}')" style="cursor:pointer;">
         <div class="order-info">
           <div class="name">${escapeHtml(q.clientName)} — ${escapeHtml(q.projectName)}</div>
-          <div class="sub">${escapeHtml(q.quoteNumber||'ללא מספר')} · בתוקף עד ${q.validUntil?new Date(q.validUntil).toLocaleDateString('he-IL'):'—'}</div>
+          <div class="sub">${escapeHtml(q.quoteNumber||'ללא מספר')} · בתוקף עד ${q.validUntil?new Date(q.validUntil).toLocaleDateString(currentLanguage==='ar'?'ar':'he-IL'):'—'}</div>
           <div class="sub">${d} · ${escapeHtml(q.materialName||'')} · ${(q.parts||[]).length} חלקים בדוח חיתוך · ${(q.materialAreaM2||0).toFixed(2)} מ״ר לתמחור</div>
           <div class="pay-bar"><div class="pay-bar-fill" style="width:${pct}%;"></div></div>
           <div class="pay-sub">שולם ₪${fmt(paid)} מתוך ₪${fmt(q.total)} ${remaining>0?`— נותר ₪${fmt(remaining)}`:'— שולם במלואו ✓'}</div>
@@ -1824,7 +1828,7 @@ function renderOrderDetail(q, remaining){
   <div class="order-detail">
     <div class="detail-title">תשלומים</div>
     ${payments.length ? payments.map(p=>`
-      <div class="pay-row"><span>${new Date(p.date).toLocaleDateString('he-IL')}${p.note?' · '+escapeHtml(p.note):''}</span><b>₪${fmt(p.amount)}</b></div>
+      <div class="pay-row"><span>${new Date(p.date).toLocaleDateString(currentLanguage==='ar'?'ar':'he-IL')}${p.note?' · '+escapeHtml(p.note):''}</span><b>₪${fmt(p.amount)}</b></div>
     `).join('') : '<div class="pay-row" style="color:var(--ink-soft);">אין תשלומים רשומים עדיין</div>'}
 
     <div class="add-pay-row">
@@ -1857,8 +1861,8 @@ async function addPayment(id){
 }
 
 function fallbackReminder(q, remaining){
-  const business = settings?.bizName ? ` מ${settings.bizName}` : '';
-  return `שלום ${q.clientName}, מה שלומך? תזכורת קצרה${business} לגבי יתרת התשלום עבור ${q.projectName}, בסך ₪${fmt(remaining)}. נשמח להסדיר את התשלום בזמן שנוח לך. תודה רבה 🙏`;
+  if(currentLanguage==='ar'){const business=settings?.bizName?` من ${settings.bizName}`:'';return `مرحباً ${q.clientName}، كيف حالك؟ تذكير بسيط${business} بخصوص المبلغ المتبقي لمشروع ${q.projectName}، وقدره ₪${fmt(remaining)}. يسعدنا ترتيب الدفع في الوقت المناسب لك. شكراً جزيلاً 🙏`;}
+  const business=settings?.bizName?` מ${settings.bizName}`:'';return `שלום ${q.clientName}, מה שלומך? תזכורת קצרה${business} לגבי יתרת התשלום עבור ${q.projectName}, בסך ₪${fmt(remaining)}. נשמח להסדיר את התשלום בזמן שנוח לך. תודה רבה 🙏`;
 }
 
 function showReminderResult(q, id, text){
@@ -1879,9 +1883,9 @@ async function generateReminder(id){
   btn.disabled = true;
   statusEl.textContent = '✍️ מנסח הודעה...';
 
-  const prompt = `נסח הודעת וואטסאפ קצרה, מנומסת ומקצועית בעברית מנגר ללקוח, לתזכורת תשלום.
-פרטים: שם לקוח: ${q.clientName}, פרויקט: ${q.projectName}, סכום שנותר לתשלום: ${remaining} ש״ח.
-הטון: ידידותי אך ברור, לא תוקפני, משפט או שניים, כולל שם הלקוח בפתיחה. בלי סוגריים מרובעים, בלי הסברים - רק ההודעה עצמה.`;
+  const prompt = currentLanguage==='ar'
+    ? `اكتب رسالة واتساب قصيرة ومهذبة ومهنية باللغة العربية من نجار إلى عميل لتذكيره بالدفع. التفاصيل: اسم العميل ${q.clientName}، المشروع ${q.projectName}، المبلغ المتبقي ₪${remaining}. النبرة ودية وواضحة، جملة أو جملتان، وابدأ باسم العميل. أعد الرسالة فقط دون شرح.`
+    : `נסח הודעת וואטסאפ קצרה, מנומסת ומקצועית בעברית מנגר ללקוח, לתזכורת תשלום. פרטים: שם לקוח: ${q.clientName}, פרויקט: ${q.projectName}, סכום שנותר לתשלום: ${remaining} ש״ח. הטון ידידותי אך ברור. החזר רק את ההודעה.`;
 
   try{
     const response = await fetch("/api/claude", {
@@ -2123,7 +2127,111 @@ const AR_TRANSLATIONS = {
   'לפחות 6 תווים':'6 أحرف على الأقل','החלפת שפה':'تغيير اللغة','ניווט ראשי':'التنقل الرئيسي',
   'שגיאה בשמירת הגדרות':'خطأ في حفظ الإعدادات','שגיאה בשמירת ההזמנה':'خطأ في حفظ العرض',
   'הזן שם לקוח לפני השמירה':'أدخل اسم العميل قبل الحفظ','לא ניתן לשמור הצעת מחיר בסכום אפס':'لا يمكن حفظ عرض بقيمة صفر',
-  'התשלום נרשם':'تم تسجيل الدفعة','ההגדרות נשמרו':'تم حفظ الإعدادات','השינויים נשמרו':'تم حفظ التعديلات'
+  'התשלום נרשם':'تم تسجيل الدفعة','ההגדרות נשמרו':'تم حفظ الإعدادات','השינויים נשמרו':'تم حفظ التعديلات',
+  "מערכת חכמה לנגרים ליצירת הצעות מחיר, ניהול לקוחות ותכנון חיתוך.":"نظام ذكي للنجارين لإنشاء عروض الأسعار وإدارة العملاء وتخطيط التقطيع",
+  "לדוגמה: נגריית אלון":"مثال: نجارة الأرز",
+  "תצוגה מקדימה של לוגו העסק":"معاينة شعار الورشة",
+  "נגרות דוד / Al Noor Carpentry":"نجارة النور / Al Noor Carpentry",
+  "MDF לבן":"MDF أبيض",
+  "פורניר אלון":"قشرة بلوط",
+  "עץ מלא":"خشب طبيعي",
+  "כבר קיים חשבון עם כתובת האימייל הזו.":"يوجد حساب بهذا البريد الإلكتروني بالفعل.",
+  "נא להזין כתובת אימייל תקינה.":"يرجى إدخال بريد إلكتروني صحيح.",
+  "לא הצלחנו להתחבר כרגע. נסה שוב בעוד רגע.":"تعذر تسجيل الدخول الآن. حاول مرة أخرى بعد قليل.",
+  "החשבון נוצר. שלחנו אליך אימייל לאישור — לאחר האישור אפשר להיכנס.":"تم إنشاء الحساب. أرسلنا رسالة تأكيد إلى بريدك — بعد التأكيد يمكنك الدخول.",
+  "להערכה מהירה של שטח בלבד. אם אתה רוצה פירוק מלא לחלקים לחיתוך — עבור לטאב \"🪚 פירוק לעבודה\".":"لتقدير سريع للمساحة فقط. لقائمة قطع كاملة انتقل إلى تبويب التخطيط والتقطيع.",
+  "🪚 פירוק לעבודה":"🪚 التخطيط والتقطيع",
+  "בחר תמונה או צלם":"اختر صورة أو التقط صورة",
+  "בחר לוגו":"اختر شعاراً",
+  "לדוגמה: חיתוך, הרכבה, גימור, התקנה":"مثال: تقطيع، تجميع، تشطيب، تركيب",
+  "שעות":"ساعات",
+  "הסר שלב":"حذف المرحلة",
+  "שם החלק — לדוגמה: דופן שמאל":"اسم القطعة — مثال: جانب أيسر",
+  "הסר חלק":"حذف القطعة",
+  "אורך (מ״מ)":"الطول (مم)",
+  "רוחב (מ״מ)":"العرض (مم)",
+  "עובי (מ״מ)":"السماكة (مم)",
+  "כמות":"الكمية",
+  "קנט באורך":"تلبيس حافة الطول",
+  "קנט ברוחב":"تلبيس حافة العرض",
+  "ללא":"بدون",
+  "צד אחד":"جهة واحدة",
+  "שני צדדים":"جهتان",
+  "הערות לנגר (לדוגמה: חזית בלבד, קיצור לעומק)":"ملاحظات للنجار (مثال: واجهة فقط، تقصير العمق)",
+  "חלקים תקינים":"قطع صالحة",
+  "שטח חיתוך כולל":"إجمالي مساحة التقطيع",
+  "בזבוז":"هدر",
+  "פלטות נדרשות (הערכה)":"ألواح مطلوبة (تقديري)",
+  "לדוגמה: צירים, ידיות, מסילות":"مثال: مفصلات، مقابض، سكك",
+  "הוסף לפחות חלק אחד תקין":"أضف قطعة صالحة واحدة على الأقل",
+  "פרויקט ללא שם":"مشروع بدون اسم",
+  "פרזול נדרש":"الإكسسوارات المطلوبة",
+  "פריט":"العنصر",
+  "דוח חיתוך מלא — לשימוש פנימי בנגריה":"تقرير تقطيع كامل — للاستخدام الداخلي في الورشة",
+  "לקוח":"العميل",
+  "חומר":"المادة",
+  "פלטה סטנדרטית":"لوح قياسي",
+  "עובי לוח ראשי":"سماكة اللوح الرئيسي",
+  "עובי לוח גב":"سماكة لوح الظهر",
+  "גובה צוקל/רגליים":"ارتفاع القاعدة/الأرجل",
+  "שם החלק":"اسم القطعة",
+  "הערות לנגר":"ملاحظات للنجار",
+  "מסמך זה לשימוש פנימי בלבד — אינו מיועד ללקוח. הערכת מספר פלטות היא חישוב שטחי בסיסי, לא סידור חיתוך (nesting) אמיתי — ייתכן שבפועל יידרש מעט יותר.":"هذا المستند للاستخدام الداخلي فقط وليس للعميل. تقدير عدد الألواح أولي وليس مخطط قص فعلياً، وقد يلزم عدد أكبر عملياً.",
+  "ההדפסה לא זמינה כאן — פתח את הקובץ בדפדפן כדי להדפיס":"الطباعة غير متاحة هنا — افتح الملف في المتصفح للطباعة",
+  "אין עדיין חלקים תקינים בדוח החיתוך":"لا توجد قطع صالحة في تقرير التقطيع بعد",
+  "השטח הועתק מדוח החיתוך ✓":"تم نسخ المساحة من تقرير التقطيع ✓",
+  "שטח לפי דוח החיתוך הנוכחי":"المساحة حسب تقرير التقطيع الحالي",
+  "לא מוזן אוטומטית — לחץ על הכפתור כדי להעתיק":"لا تُدخل تلقائياً — اضغط الزر للنسخ",
+  "עדיין אין חלקים בדוח החיתוך — עבור לטאב \"פירוק לעבודה\" כדי לבנות אותו":"لا توجد قطع في التقرير بعد — انتقل إلى تبويب التخطيط والتقطيع لإنشائه",
+  "עבודה":"عمل",
+  "סה״כ לתשלום":"الإجمالي للدفع",
+  "בתוקף עד":"صالح حتى",
+  "מספר":"رقم",
+  "נגרות":"نجارة",
+  "הזן מספר נייד ישראלי תקין כדי לשלוח בוואטסאפ":"أدخل رقم جوال إسرائيلياً صحيحاً للإرسال عبر واتساب",
+  "הזן שם לקוח לפני השליחה":"أدخل اسم العميل قبل الإرسال",
+  "לא ניתן לשלוח הצעה בסכום אפס":"لا يمكن إرسال عرض بقيمة صفر",
+  "הזן שם לקוח לפני יצירת PDF":"أدخل اسم العميل قبل إنشاء PDF",
+  "לא ניתן ליצור הצעה בסכום אפס":"لا يمكن إنشاء عرض بقيمة صفر",
+  "מכין PDF...":"جاري إنشاء PDF...",
+  "קובץ ה־PDF מוכן ✓":"ملف PDF جاهز ✓",
+  "יצירת ה־PDF נכשלה — נסה שוב":"فشل إنشاء PDF — حاول مرة أخرى",
+  "הזן מספר נייד ישראלי תקין":"أدخل رقم جوال إسرائيلياً صحيحاً",
+  "מכין PDF לשיתוף...":"جاري تجهيز PDF للمشاركة...",
+  "ה־PDF ירד — צרף אותו להודעת הוואטסאפ":"تم تنزيل PDF — أرفقه برسالة واتساب",
+  "לא ניתן לשתף — נסה להוריד את ה־PDF":"تعذرت المشاركة — حاول تنزيل PDF",
+  "הערכה גסה בלבד — לתמחור ראשוני. לא תחליף פירוק מדויק.":"تقدير أولي فقط للتسعير، ولا يغني عن قائمة قطع دقيقة.",
+  "תיאור":"الوصف",
+  "מידות חיצוניות":"الأبعاد الخارجية",
+  "שטח חומר משוער":"مساحة المواد التقديرية",
+  "חומר מוצע":"المادة المقترحة",
+  "רמת ביטחון":"درجة الثقة",
+  "נמוכה":"منخفضة",
+  "בינונית":"متوسطة",
+  "גבוהה":"مرتفعة",
+  "מלא בהצעת המחיר":"أدخل البيانات في عرض السعر",
+  "פירוק AI בלבד — לא תחליף מדידה בשטח. חובה לאמת ולתקן כל שורה לפני חיתוך.":"قائمة AI تقديرية ولا تغني عن القياس الميداني. يجب مراجعة كل سطر قبل التقطيع.",
+  "מידות חיצוניות משוערות":"الأبعاد الخارجية التقديرية",
+  "גובה צוקל משוער":"ارتفاع القاعدة التقديري",
+  "רשימת חלקים מוצעת":"قائمة القطع المقترحة",
+  "חלקים לרשימת החיתוך":"قطع إلى قائمة التقطيع",
+  "ללא מספר":"بدون رقم",
+  "חלקים בדוח חיתוך":"قطع في تقرير التقطيع",
+  "מ״ר לתמחור":"م² للتسعير",
+  "שולם":"تم دفع",
+  "מתוך":"من أصل",
+  "נותר":"المتبقي",
+  "שולם במלואו ✓":"تم الدفع بالكامل ✓",
+  "הזן סכום תקין":"أدخل مبلغاً صحيحاً",
+  "למחוק את הצעת המחיר? לא ניתן לבטל פעולה זו.":"هل تريد حذف عرض السعر؟ لا يمكن التراجع.",
+  "ההזמנה נמחקה":"تم حذف العرض",
+  "הלוגו גדול מדי — עד 8MB":"الشعار كبير جداً — الحد الأقصى 8MB",
+  "הלוגו נוסף — לחץ שמור הגדרות":"تمت إضافة الشعار — اضغط حفظ الإعدادات",
+  "לא ניתן לקרוא את קובץ הלוגו":"تعذرت قراءة ملف الشعار",
+  "הלוגו הוסר — לחץ שמור הגדרות":"تم حذف الشعار — اضغط حفظ الإعدادات",
+  "מ״ר":"م²",
+  "ס״מ":"سم",
+  "מ״מ":"مم"
 };
 let currentLanguage = localStorage.getItem('carpentry_quotes_language') || 'he';
 const i18nOriginalText = new WeakMap();
