@@ -5,12 +5,12 @@ const src = 'index.html';
 const outDir = 'dist';
 let html = fs.readFileSync(src, 'utf8');
 
-const cssTag = '<link rel="stylesheet" href="/stitch-hybrid.css?v=7">';
-const wizardCssTag = '<link rel="stylesheet" href="/wizard-v2.css?v=1">';
-const jsTag = '<script src="/stitch-hybrid.js?v=7" defer></script>';
-const wizardJsTag = '<script src="/wizard-v2.js?v=1" defer></script>';
+const cssTag = '<link rel="stylesheet" href="/stitch-hybrid.css?v=8">';
+const wizardCssTag = '<link rel="stylesheet" href="/wizard-v2.css?v=2">';
+const jsTag = '<script src="/stitch-hybrid.js?v=8" defer></script>';
+const wizardJsTag = '<script src="/wizard-v2.js?v=2" defer></script>';
 const pwaTag = '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1e2229"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="/pwa-icon.svg">';
-const pwaJsTag = '<script src="/pwa.js?v=1" defer></script>';
+const pwaJsTag = '<script src="/pwa.js?v=2" defer></script>';
 
 if (!html.includes('/stitch-hybrid.css')) html = html.replace('</head>', `  ${cssTag}\n</head>`);
 if (!html.includes('/wizard-v2.css')) html = html.replace('</head>', `  ${wizardCssTag}\n</head>`);
