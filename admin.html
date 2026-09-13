@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Carpentry Quotes</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#f4f5f2;--surface:#fff;--ink:#171a18;--muted:#6b736e;--line:#dfe3df;--oak:#c8732d;--graphite:#202421;--green:#2d7450;--red:#a33f32}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--graphite);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:16px}.top h1{font-size:20px;margin:0}.top p{margin:4px 0 0;color:#cbd1cd;font-size:12px}.back{color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.25);padding:9px 12px;border-radius:10px;font-size:13px}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi span{display:block;color:var(--muted);font-size:11px}.kpi strong{font-size:24px}.search{width:100%;min-height:46px;border:1px solid #cfd5d1;border-radius:11px;padding:10px 12px;font-size:16px;background:#fff;margin-bottom:12px}.user{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}.user-head{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(100px,.5fr));gap:10px;align-items:center;padding:14px 16px;cursor:pointer}.name{font-weight:800}.sub{font-size:12px;color:var(--muted);margin-top:2px}.metric{font-size:12px;color:var(--muted)}.metric b{display:block;color:var(--ink);font-size:14px}.quotes{display:none;border-top:1px solid var(--line);padding:10px;background:#fafbfa}.user.open .quotes{display:block}.quote{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(90px,.5fr));gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:7px}.qtitle{font-weight:700}.small{font-size:11px;color:var(--muted)}.status{display:inline-block;border-radius:999px;padding:5px 8px;font-size:11px;background:#eef2ef}.empty,.error,.loading{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}.error{color:var(--red)}@media(max-width:760px){.wrap{padding:10px}.top{border-radius:0;margin:-10px -10px 12px}.kpis{grid-template-columns:1fr 1fr}.kpi:last-child{grid-column:1/-1}.user-head{grid-template-columns:1fr 1fr}.user-head>div:first-child{grid-column:1/-1}.quote{grid-template-columns:1fr 1fr}.quote>div:first-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><div><h1>ניהול משתמשים והצעות</h1><p>תצוגת Admin בלבד</p></div><a class="back" href="/">חזרה לאתר</a></header>
+  <div id="app"><div class="loading">טוען נתונים...</div></div>
+</div>
+<script>
+let sb=null,allUsers=[];
+const fmt=n=>(Number(n||0)).toLocaleString('he-IL');
+const date=v=>v?new Date(v).toLocaleDateString('he-IL'):'—';
+const esc=s=>{const d=document.createElement('div');d.textContent=s||'';return d.innerHTML};
+async function init(){
+  try{
+    const cfg=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json());
+    if(!cfg.supabaseUrl||!cfg.supabaseAnonKey) throw new Error('Supabase לא מחובר');
+    sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){location.href='/?admin=1';return;}
+    const resp=await fetch('/api/admin-data',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+    const data=await resp.json();
+    if(resp.status===403) throw new Error('למשתמש הזה אין הרשאת Admin.');
+    if(resp.status===503) throw new Error('יש להגדיר ADMIN_EMAIL ו-SUPABASE_SERVICE_ROLE_KEY ב-Vercel.');
+    if(!resp.ok) throw new Error('לא הצלחנו לטעון את נתוני הניהול.');
+    allUsers=data.users||[]; render(allUsers);
+  }catch(e){document.getElementById('app').innerHTML=`<div class="error">${esc(e.message)}</div>`}
+}
+function render(users){
+  const quoteCount=users.reduce((n,u)=>n+u.quotes.length,0);
+  const total=users.reduce((n,u)=>n+u.quotes.reduce((s,q)=>s+Number(q.total||0),0),0);
+  document.getElementById('app').innerHTML=`
+    <div class="kpis"><div class="kpi"><span>משתמשים</span><strong>${users.length}</strong></div><div class="kpi"><span>הצעות</span><strong>${quoteCount}</strong></div><div class="kpi"><span>שווי הצעות</span><strong>₪${fmt(total)}</strong></div></div>
+    <input class="search" id="search" placeholder="חפש משתמש, אימייל, לקוח או פרויקט">
+    <div id="list">${users.map(userHtml).join('')||'<div class="empty">עדיין אין משתמשים להצגה</div>'}</div>`;
+  document.getElementById('search').addEventListener('input',e=>filter(e.target.value));
+  document.querySelectorAll('.user-head').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('open')));
+}
+function userHtml(u){const sum=u.quotes.reduce((s,q)=>s+Number(q.total||0),0);return `<section class="user" data-search="${esc([u.displayName,u.email,...u.quotes.flatMap(q=>[q.clientName,q.projectName,q.quoteNumber])].join(' ').toLowerCase())}"><div class="user-head"><div><div class="name">${esc(u.displayName||u.email||'משתמש')}</div><div class="sub">${esc(u.email)} · נרשם ${date(u.createdAt)}</div></div><div class="metric">הצעות<b>${u.quotes.length}</b></div><div class="metric">שווי<b>₪${fmt(sum)}</b></div><div class="metric">כניסה אחרונה<b>${date(u.lastSignInAt)}</b></div></div><div class="quotes">${u.quotes.length?u.quotes.map(quoteHtml).join(''):'<div class="empty">אין למשתמש הזה הצעות שמורות</div>'}</div></section>`}
+function quoteHtml(q){return `<div class="quote"><div><div class="qtitle">${esc(q.clientName||'ללא שם')} — ${esc(q.projectName||'ללא פרויקט')}</div><div class="small">${esc(q.quoteNumber||'')} ${q.clientPhone?'· '+esc(q.clientPhone):''}</div></div><div><div class="small">סכום</div><b>₪${fmt(q.total)}</b></div><div><div class="small">סטטוס</div><span class="status">${esc(q.status)}</span></div><div><div class="small">נוצר</div><b>${date(q.date)}</b></div><div><div class="small">חומר</div><b>${esc(q.materialName||'—')}</b></div></div>`}
+function filter(v){const q=(v||'').trim().toLowerCase();document.querySelectorAll('.user').forEach(el=>el.style.display=!q||el.dataset.search.includes(q)?'block':'none')}
+init();
+</script>
+</body>
+</html>
