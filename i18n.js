@@ -1,0 +1,71 @@
+/* Carpentry Quotes i18n runtime — HE/AR/EN, no framework required. */
+(function(){
+ const SUPPORTED=['he','ar','en'];
+ let lang=SUPPORTED.includes(localStorage.getItem('carpentry_quotes_language'))?localStorage.getItem('carpentry_quotes_language'):'he';
+ let observer=null;
+ const originalText=new WeakMap(),originalAttrs=new WeakMap();
+ const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>[...r.querySelectorAll(s)];
+ function dict(l=lang){return window.CQ_LOCALES?.[l]?.strings||{}}
+ function translateString(value,l=lang){
+   if(!value||l==='he')return value;
+   let out=value;
+   const entries=Object.entries(dict(l)).sort((a,b)=>b[0].length-a[0].length);
+   for(const [he,tr] of entries) if(out.includes(he)) out=out.split(he).join(tr);
+   return out;
+ }
+ function translateNode(node){
+   if(!node)return;
+   if(node.nodeType===Node.TEXT_NODE){
+     if(node.parentElement?.closest('script,style,[data-i18n-ignore]'))return;
+     if(!originalText.has(node))originalText.set(node,node.nodeValue);
+     node.nodeValue=translateString(originalText.get(node));return;
+   }
+   if(node.nodeType!==Node.ELEMENT_NODE)return;
+   const nodes=[];const w=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())nodes.push(n);nodes.forEach(translateNode);
+   [node,...qa('*',node)].forEach(el=>{
+     if(el.closest?.('[data-i18n-ignore]'))return;
+     const saved=originalAttrs.get(el)||{};
+     ['placeholder','title','aria-label','value'].forEach(a=>{
+       if(a==='value'&&!['BUTTON','INPUT'].includes(el.tagName))return;
+       if(el.hasAttribute?.(a)&&!(a in saved))saved[a]=el.getAttribute(a);
+       if(a in saved)el.setAttribute(a,translateString(saved[a]));
+     });
+     originalAttrs.set(el,saved);
+   });
+ }
+ function addSelector(){
+   if(q('#cqLanguageSelect'))return;
+   const sel=document.createElement('select');sel.id='cqLanguageSelect';sel.className='cq-language-select no-print';sel.setAttribute('aria-label','בחירת שפה');
+   sel.innerHTML='<option value="he">עברית</option><option value="ar">العربية</option><option value="en">English</option>';
+   sel.value=lang;sel.addEventListener('change',()=>setLanguage(sel.value));
+   const header=q('header.topbar .row')||q('header.topbar');header?.insertBefore(sel,q('#langToggle')||q('#accountActions')||null);
+   const auth=q('.auth-card');if(auth&&!q('#cqAuthLanguageSelect')){const clone=sel.cloneNode(true);clone.id='cqAuthLanguageSelect';clone.value=lang;clone.addEventListener('change',()=>setLanguage(clone.value));auth.insertBefore(clone,auth.firstChild)}
+   qa('.lang-toggle').forEach(x=>x.style.display='none');
+ }
+ function syncSelectors(){qa('#cqLanguageSelect,#cqAuthLanguageSelect').forEach(s=>s.value=lang)}
+ function applyDirection(){const cfg=window.CQ_LOCALES?.[lang]||window.CQ_LOCALES.he;document.documentElement.lang=lang;document.documentElement.dir=cfg.dir;document.body.dir=cfg.dir;document.body.classList.toggle('cq-ltr',cfg.dir==='ltr');}
+ function setLanguage(next){
+   if(!SUPPORTED.includes(next))next='he';lang=next;localStorage.setItem('carpentry_quotes_language',lang);window.currentLanguage=lang;applyDirection();
+   observer?.disconnect();translateNode(document.body);syncSelectors();observer?.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label','value']});
+   document.dispatchEvent(new CustomEvent('cq:languagechange',{detail:{language:lang,dir:document.documentElement.dir}}));
+ }
+ function patchDialogs(){
+   const nativeAlert=window.alert,nativeConfirm=window.confirm;
+   window.alert=msg=>nativeAlert.call(window,translateString(String(msg)));
+   window.confirm=msg=>nativeConfirm.call(window,translateString(String(msg)));
+ }
+ function auditVisibleLanguage(){
+   if(lang==='he')return [];
+   const misses=[];qa('body *').forEach(el=>{if(el.children.length||el.closest('script,style,[data-i18n-ignore]'))return;const t=(el.textContent||'').trim();if(t&&/[\u0590-\u05FF]/.test(t))misses.push(t)});
+   if(misses.length)console.warn('[i18n] Untranslated UI strings:',[...new Set(misses)]);
+   return misses;
+ }
+ function init(){
+   try{if(typeof i18nObserver!=='undefined')i18nObserver.disconnect()}catch(e){}
+   patchDialogs();addSelector();observer=new MutationObserver(ms=>{observer.disconnect();for(const m of ms){if(m.type==='characterData'){originalText.set(m.target,m.target.nodeValue);translateNode(m.target)}else m.addedNodes.forEach(n=>translateNode(n));}observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label','value']});});
+   setLanguage(lang);setTimeout(auditVisibleLanguage,1200);
+ }
+ window.CQ_I18N={setLanguage,getLanguage:()=>lang,t:(s,l=lang)=>translateString(s,l),audit:auditVisibleLanguage};
+ window.applyLanguage=setLanguage;window.toggleLanguage=()=>setLanguage(lang==='he'?'ar':lang==='ar'?'en':'he');
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,50));else setTimeout(init,50);
+})();
