@@ -1,0 +1,21 @@
+{
+  "name": "Carpentry Quotes — הצעות מחיר לנגרים",
+  "short_name": "Carpentry Quotes",
+  "description": "מערכת לנגרים ליצירת הצעות מחיר, ניהול לקוחות ותכנון חיתוך.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f6faff",
+  "theme_color": "#1e2229",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
