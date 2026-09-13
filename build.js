@@ -19,6 +19,7 @@ html = html
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'index.html'), html);
+fs.copyFileSync('admin.html', path.join(outDir, 'admin.html'));
 fs.copyFileSync('stitch-hybrid.css', path.join(outDir, 'stitch-hybrid.css'));
 fs.copyFileSync('stitch-hybrid.js', path.join(outDir, 'stitch-hybrid.js'));
 
