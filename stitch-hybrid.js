@@ -2,11 +2,29 @@
 (function(){
   let busy=false;
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
-  function clickTab(tab){$('nav.tabs button[data-tab="'+tab+'"]')?.click();window.scrollTo({top:0,behavior:'smooth'})}
-  function normalizeNavigation(){const labels={quote:['＋','הצעה'],cutlist:['▦','חיתוך'],orders:['◎','עבודות'],settings:['₪','מחירון']};$$('nav.tabs button[data-tab]').forEach(btn=>{const cfg=labels[btn.dataset.tab];if(!cfg)return;const icon=$('.tab-icon',btn);if(icon)icon.textContent=cfg[0];const spans=$$('span',btn);if(spans.length>1)spans[spans.length-1].textContent=cfg[1]})}
-  function addDashboard(){const main=$('main');if(!main||$('#hy-dashboard'))return;const dash=document.createElement('section');dash.id='hy-dashboard';dash.className='hy-dashboard';dash.innerHTML=`<div class="hy-dash-head"><div><span class="hy-eyebrow">סדנת העבודה שלי</span><h2>מה עושים עכשיו?</h2><p>כל פעולה מרכזית במקום אחד.</p></div><button class="primary hy-new-quote" type="button">＋ הצעת מחיר חדשה</button></div><div class="hy-dash-actions"><button type="button" data-go="quote"><b>＋</b><strong>הצעה חדשה</strong><small>לקוח → עבודה → מחיר → שליחה</small></button><button type="button" data-go="orders"><b>◎</b><strong>עבודות ולקוחות</strong><small>הצעות, סטטוס ותשלומים</small></button><button type="button" data-go="settings"><b>₪</b><strong>המחירון שלי</strong><small>מחירי חומרים לפי מ״ר</small></button><button type="button" data-go="cutlist"><b>▦</b><strong>חיתוך</strong><small>מידות ורשימת חלקים לייצור</small></button></div>`;main.insertBefore(dash,main.firstElementChild);$$('[data-go]',dash).forEach(b=>b.addEventListener('click',()=>clickTab(b.dataset.go)));$('.hy-new-quote',dash)?.addEventListener('click',()=>clickTab('quote'));
-    const nav=$('nav.tabs');nav?.addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;dash.classList.toggle('hy-dashboard-hidden',b.dataset.tab!=='quote')});
+  function showHome(){
+    const dash=$('#hy-dashboard'); if(dash) dash.classList.remove('hy-dashboard-hidden');
+    $$('main > section[id^="tab-"]').forEach(s=>s.classList.add('hy-tab-hidden'));
+    $$('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    $('nav.tabs button[data-hy-home]')?.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
   }
+  function clickTab(tab){
+    const dash=$('#hy-dashboard'); if(dash) dash.classList.add('hy-dashboard-hidden');
+    $$('main > section[id^="tab-"]').forEach(s=>s.classList.remove('hy-tab-hidden'));
+    $('nav.tabs button[data-tab="'+tab+'"]')?.click();
+    $('nav.tabs button[data-hy-home]')?.classList.remove('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function normalizeNavigation(){
+    const nav=$('nav.tabs');
+    if(nav&&!$('button[data-hy-home]',nav)){
+      const home=document.createElement('button');home.type='button';home.dataset.hyHome='1';home.innerHTML='<span class="tab-icon">⌂</span><span>בית</span>';home.addEventListener('click',showHome);nav.insertBefore(home,nav.firstElementChild);
+    }
+    const labels={quote:['＋','הצעה'],cutlist:['▦','חיתוך'],orders:['◎','עבודות'],settings:['₪','מחירון']};
+    $$('nav.tabs button[data-tab]').forEach(btn=>{const cfg=labels[btn.dataset.tab];if(!cfg)return;const icon=$('.tab-icon',btn);if(icon)icon.textContent=cfg[0];const spans=$$('span',btn);if(spans.length>1)spans[spans.length-1].textContent=cfg[1]});
+  }
+  function addDashboard(){const main=$('main');if(!main||$('#hy-dashboard'))return;const dash=document.createElement('section');dash.id='hy-dashboard';dash.className='hy-dashboard';dash.innerHTML=`<div class="hy-dash-head"><div><span class="hy-eyebrow">סדנת העבודה שלי</span><h2>מה עושים עכשיו?</h2><p>כל פעולה מרכזית במקום אחד.</p></div><button class="primary hy-new-quote" type="button">＋ הצעת מחיר חדשה</button></div><div class="hy-dash-actions"><button type="button" data-go="quote"><b>＋</b><strong>הצעה חדשה</strong><small>לקוח → עבודה → מחיר → שליחה</small></button><button type="button" data-go="orders"><b>◎</b><strong>עבודות ולקוחות</strong><small>הצעות, סטטוס ותשלומים</small></button><button type="button" data-go="settings"><b>₪</b><strong>המחירון שלי</strong><small>מחירי חומרים לפי מ״ר</small></button><button type="button" data-go="cutlist"><b>▦</b><strong>חיתוך</strong><small>מידות ורשימת חלקים לייצור</small></button></div>`;main.insertBefore(dash,main.firstElementChild);$$('[data-go]',dash).forEach(b=>b.addEventListener('click',()=>clickTab(b.dataset.go)));$('.hy-new-quote',dash)?.addEventListener('click',()=>clickTab('quote'));showHome();}
   function hideLegacyInternalCosting(){const terms=['תכנון','ייצור','תקורה'];$$('label,.field,.row2,.cost-row,.setting-row').forEach(el=>{const txt=(el.textContent||'').trim();if(terms.some(t=>txt.includes(t))){const target=el.matches('label')?(el.closest('.row2')||el.parentElement):el;if(target)target.classList.add('hybrid-hide-cost')}})}
   function polishAiCopy(){$$('.ai-box .hint,.ai-box .warn,.ai-status').forEach(el=>{if((el.textContent||'').includes('דיוק'))el.textContent='ה-AI מציע נתונים ראשוניים. יש לאמת מידות לפני שליחת הצעה.'})}
   function addWorkspaceIntro(){const quote=$('#tab-quote');if(!quote||$('.hy-workspace',quote))return;const hero=document.createElement('section');hero.className='hy-workspace';hero.innerHTML=`<div><span class="hy-eyebrow">יצירת הצעה</span><h2>הצעה מקצועית בחמישה צעדים</h2><p>ממלאים רק מה שצריך. אפשר לחזור ולערוך בכל שלב.</p></div><div class="hy-flow"><span class="active">1 <b>לקוח</b></span><span>2 <b>עבודה</b></span><span>3 <b>פריטים</b></span><span>4 <b>מחיר</b></span><span>5 <b>שליחה</b></span></div>`;quote.insertBefore(hero,quote.firstElementChild)}
