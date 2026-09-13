@@ -1,0 +1,10 @@
+/* Admin-only locale additions */
+(function(){
+ const ar=window.CQ_LOCALES?.ar?.strings,en=window.CQ_LOCALES?.en?.strings;if(!ar||!en)return;
+ Object.assign(ar,{
+ 'ניהול משתמשים והצעות':'إدارة المستخدمين وعروض الأسعار','תצוגת Admin בלבד':'واجهة المدير فقط','חזרה לאתר':'العودة إلى الموقع','טוען נתונים...':'جارٍ تحميل البيانات...','משתמשים':'المستخدمون','הצעות':'عروض الأسعار','שווי הצעות':'قيمة العروض','חפש משתמש, אימייל, לקוח או פרויקט':'ابحث عن مستخدم أو بريد إلكتروني أو عميل أو مشروع','עדיין אין משתמשים להצגה':'لا يوجد مستخدمون للعرض بعد','משתמש':'مستخدم','נרשם ':'تاريخ التسجيل: ','שווי':'القيمة','כניסה אחרונה':'آخر تسجيل دخول','אין למשתמש הזה הצעות שמורות':'لا توجد عروض محفوظة لهذا المستخدم','ללא שם':'بدون اسم','ללא פרויקט':'بدون مشروع','סכום':'المبلغ','סטטוס':'الحالة','נוצר':'تاريخ الإنشاء','חומר':'المادة','Supabase לא מחובר':'Supabase غير متصل','למשתמש הזה אין הרשאת Admin.':'هذا المستخدم لا يملك صلاحية المدير.','יש להגדיר ADMIN_EMAIL ו-SUPABASE_SERVICE_ROLE_KEY ב-Vercel.':'يجب إعداد ADMIN_EMAIL وSUPABASE_SERVICE_ROLE_KEY في Vercel.','לא הצלחנו לטעון את נתוני הניהול.':'تعذر تحميل بيانات الإدارة.'
+ });
+ Object.assign(en,{
+ 'ניהול משתמשים והצעות':'Users & Quotes Administration','תצוגת Admin בלבד':'Admin view only','חזרה לאתר':'Back to site','טוען נתונים...':'Loading data...','משתמשים':'Users','הצעות':'Quotes','שווי הצעות':'Quote value','חפש משתמש, אימייל, לקוח או פרויקט':'Search user, email, customer or project','עדיין אין משתמשים להצגה':'No users to display yet','משתמש':'User','נרשם ':'Registered ','שווי':'Value','כניסה אחרונה':'Last sign-in','אין למשתמש הזה הצעות שמורות':'This user has no saved quotes','ללא שם':'No name','ללא פרויקט':'No project','סכום':'Amount','סטטוס':'Status','נוצר':'Created','חומר':'Material','Supabase לא מחובר':'Supabase is not connected','למשתמש הזה אין הרשאת Admin.':'This user does not have Admin permission.','יש להגדיר ADMIN_EMAIL ו-SUPABASE_SERVICE_ROLE_KEY ב-Vercel.':'Set ADMIN_EMAIL and SUPABASE_SERVICE_ROLE_KEY in Vercel.','לא הצלחנו לטעון את נתוני הניהול.':'Could not load administration data.'
+ });
+})();
