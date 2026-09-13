@@ -23,6 +23,22 @@
     const panels=$$('.grid2 > .panel',q); if(panels[1])panels[1].classList.add('hy-preview-panel');
     $$('.actions-row',q).forEach(x=>x.classList.add('hy-send-actions'));
   }
+  function ensureAiAccess(){
+    const q=quote(), box=$('#aiBoxQ',q), input=$('#aiImageInputQ',q);
+    if(!q||!box||!input||$('.hy-ai-quote-entry',q))return;
+    const entry=document.createElement('div');
+    entry.className='hy-ai-quote-entry';entry.dataset.hyStep='2';
+    entry.innerHTML='<button type="button" class="hy-ai-photo-btn"><span>📷</span><b>צלם או העלה תמונה ל-AI</b><small>ה-AI יציע שטח חומר משוער וניתן לתקן ידנית</small></button>';
+    box.parentNode.insertBefore(entry,box);
+    $('.hy-ai-photo-btn',entry).addEventListener('click',()=>input.click());
+    input.addEventListener('change',()=>{
+      if(!input.files||!input.files.length)return;
+      box.classList.add('hy-ai-open');
+      box.classList.remove('hy-ai-collapsed');
+      const legacy=$('.hy-ai-trigger',q);if(legacy)legacy.style.display='none';
+      setTimeout(()=>box.scrollIntoView({behavior:'smooth',block:'center'}),120);
+    });
+  }
   function addControls(){
     const q=quote(); if(!q||$('#hy-wizard-controls'))return;
     const c=document.createElement('div');c.id='hy-wizard-controls';c.className='hy-wizard-controls no-print';
@@ -53,6 +69,6 @@
     try{const d=JSON.parse(localStorage.getItem(key)||'{}');$$('input[id],select[id],textarea[id]',q).forEach(el=>{if(d[el.id]!=null&&!el.value){el.value=d[el.id];el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}})}catch(e){}
     let timer; q.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{const d={};$$('input[id],select[id],textarea[id]',q).forEach(el=>{if(el.type!=='file')d[el.id]=el.value});try{localStorage.setItem(key,JSON.stringify(d));const s=$('[data-save]');if(s)s.textContent='נשמר עכשיו ✓'}catch(e){}},350)});
   }
-  function init(){const q=quote();if(!q)return;tagFields();addControls();autosave();setStep(1)}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,250));else setTimeout(init,250);
+  function init(){const q=quote();if(!q)return;tagFields();ensureAiAccess();addControls();autosave();setStep(1)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,300));else setTimeout(init,300);
 })();
