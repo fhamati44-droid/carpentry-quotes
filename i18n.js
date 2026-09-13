@@ -1,6 +1,7 @@
 /* Carpentry Quotes i18n runtime — HE/AR/EN, no framework required. */
 (function(){
  const SUPPORTED=['he','ar','en'];
+ const legacyApply=window.applyLanguage;
  let lang=SUPPORTED.includes(localStorage.getItem('carpentry_quotes_language'))?localStorage.getItem('carpentry_quotes_language'):'he';
  let observer=null;
  const originalText=new WeakMap(),originalAttrs=new WeakMap();
@@ -15,7 +16,7 @@
  function setLanguage(next){if(!SUPPORTED.includes(next))next='he';lang=next;localStorage.setItem('carpentry_quotes_language',lang);syncLegacyLanguage();applyDirection();observer?.disconnect();translateNode(document.body);syncSelectors();observer?.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label','value']});document.dispatchEvent(new CustomEvent('cq:languagechange',{detail:{language:lang,dir:document.documentElement.dir}}))}
  function patchDialogs(){const nativeAlert=window.alert,nativeConfirm=window.confirm;window.alert=msg=>nativeAlert.call(window,translateString(String(msg)));window.confirm=msg=>nativeConfirm.call(window,translateString(String(msg)))}
  function auditVisibleLanguage(){if(lang==='he')return[];const misses=[];qa('body *').forEach(el=>{if(el.children.length||el.closest('script,style,[data-i18n-ignore]'))return;const t=(el.textContent||'').trim();if(t&&/[\u0590-\u05FF]/.test(t))misses.push(t)});if(misses.length)console.warn('[i18n] Untranslated UI strings:',[...new Set(misses)]);return misses}
- function init(){try{if(typeof i18nObserver!=='undefined')i18nObserver.disconnect()}catch(e){}patchDialogs();addSelector();observer=new MutationObserver(ms=>{observer.disconnect();for(const m of ms){if(m.type==='characterData'){originalText.set(m.target,m.target.nodeValue);translateNode(m.target)}else m.addedNodes.forEach(n=>translateNode(n))}observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label','value']})});setLanguage(lang);setTimeout(auditVisibleLanguage,1200)}
+ function init(){const desired=lang;try{legacyApply?.('he')}catch(e){}try{if(typeof i18nObserver!=='undefined')i18nObserver.disconnect()}catch(e){}lang=desired;patchDialogs();addSelector();observer=new MutationObserver(ms=>{observer.disconnect();for(const m of ms){if(m.type==='characterData'){originalText.set(m.target,m.target.nodeValue);translateNode(m.target)}else m.addedNodes.forEach(n=>translateNode(n))}observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label','value']})});setLanguage(lang);setTimeout(auditVisibleLanguage,1200)}
  window.CQ_I18N={setLanguage,getLanguage:()=>lang,t:(s,l=lang)=>translateString(s,l),audit:auditVisibleLanguage};window.applyLanguage=setLanguage;window.toggleLanguage=()=>setLanguage(lang==='he'?'ar':lang==='ar'?'en':'he');
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,50));else setTimeout(init,50);
 })();
