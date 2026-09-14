@@ -1,4 +1,4 @@
-const CACHE='carpentry-quotes-v8';
+const CACHE='carpentry-quotes-v9';
 const APP_SHELL=['/','/index.html','/stitch-hybrid.css','/stitch-hybrid.js','/wizard-v2.css','/wizard-v2.js','/materials-v2.js','/jobs-v2.js','/auth-v2.js','/i18n.css','/i18n-locales.js','/i18n-admin-locales.js','/i18n.js','/i18n-behavior.js','/pwa.js','/manifest.webmanifest','/pwa-icon.svg','/vendor/html2pdf.bundle.min.js'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
