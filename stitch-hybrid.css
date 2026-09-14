@@ -1,5 +1,26 @@
-/* Product Architecture V2 — jobs layer over stable V2 base */
-@import url('https://raw.githubusercontent.com/fhamati44-droid/carpentry-quotes/9b3cf0deb34a3d91a2c6d0da00d72dfaeeaf08ee/stitch-hybrid.css');
+/* Product Architecture V2 — self-contained critical UI.
+   Keep the dashboard and mobile navigation local: relying on raw.githubusercontent.com
+   made the home screen lose its layout whenever that request was slow or blocked. */
 :root{--hy-bg:#f4f5f2;--hy-surface:#fff;--hy-ink:#171a18;--hy-muted:#68706b;--hy-line:#dfe3df;--hy-graphite:#202421;--hy-oak:#c8732d;--hy-oak-dark:#9d541f;--hy-shadow:0 10px 30px rgba(24,29,26,.07)}
+.hy-dashboard-hidden,.hy-tab-hidden{display:none!important}
+.hy-dashboard{background:linear-gradient(135deg,#202421,#303630);color:#fff;border-radius:20px;padding:22px;margin-bottom:16px;box-shadow:0 14px 36px rgba(20,25,22,.14)}
+.hy-dash-head{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.hy-dash-head>div{min-width:0}.hy-dash-head h2{font-size:25px;line-height:1.2;margin:6px 0 3px}.hy-dash-head p{margin:0;color:#cdd3cf}.hy-dash-head .hy-eyebrow{display:inline-flex;color:#ffd7b7;background:rgba(200,115,45,.18);border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800}.hy-new-quote{flex:0 0 auto;min-width:180px}
+.hy-dash-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:18px}
+.hy-dash-actions button{min-width:0;min-height:126px;text-align:start;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:#fff;border-radius:14px;padding:14px;cursor:pointer;font:inherit;overflow:hidden;transition:background-color .18s,transform .18s,border-color .18s}
+.hy-dash-actions button:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);transform:translateY(-1px)}
+.hy-dash-actions b{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(200,115,45,.2);color:#ffc493;font-size:18px;margin-bottom:10px}
+.hy-dash-actions strong,.hy-dash-actions small{display:block;overflow-wrap:anywhere}.hy-dash-actions strong{font-size:14px;line-height:1.35}.hy-dash-actions small{font-size:11px;color:#cbd1cd;margin-top:3px;line-height:1.45}
 .hy-jobs-tools{background:#fff;border:1px solid var(--hy-line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--hy-shadow)}.hy-jobs-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.hy-jobs-title span{font-size:11px;color:var(--hy-oak-dark);font-weight:800}.hy-jobs-title h2{margin:3px 0 0;font-size:21px}.hy-jobs-filters{display:grid;grid-template-columns:minmax(220px,1fr) 190px;gap:8px;margin-top:13px}.hy-jobs-filters input,.hy-jobs-filters select{min-height:46px;border:1px solid #cfd5d1;border-radius:11px;background:#fff;padding:9px 11px;font:inherit}.status-approved{background:#eaf4ff!important;color:#245b85!important}.status-deposit{background:#fff4d9!important;color:#805b10!important}.status-install{background:#f1eaff!important;color:#5e438d!important}
-@media(max-width:860px){.hy-jobs-tools{padding:12px;border-radius:13px}.hy-jobs-title h2{font-size:18px}.hy-jobs-title .primary{min-width:auto!important;padding:8px 10px!important;font-size:11px!important}.hy-jobs-filters{grid-template-columns:1fr;margin-top:10px}.order-card{display:block!important}.order-right{margin-top:10px!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}.order-right .order-amount{grid-column:1/-1!important}.order-right button{width:100%!important;min-height:42px!important}.order-detail{padding:11px!important}}
+@media(max-width:860px){
+  .hy-dashboard{padding:16px 13px;border-radius:16px;margin-bottom:10px}
+  .hy-dash-head{align-items:flex-start}.hy-dash-head h2{font-size:21px}.hy-dash-head p{font-size:12px}.hy-new-quote{display:none!important}
+  .hy-dash-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+  .hy-dash-actions button{min-height:116px;padding:12px}.hy-dash-actions b{margin-bottom:7px}.hy-dash-actions small{font-size:10.5px}
+  nav.tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:auto!important;right:8px!important;left:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;overflow:hidden!important}
+  nav.tabs button{width:auto!important;min-width:0!important;padding-inline:1px!important;overflow:hidden!important}
+  nav.tabs button span:last-child{display:block!important;width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:10px!important}
+  main{padding-bottom:112px!important}
+  .hy-jobs-tools{padding:12px;border-radius:13px}.hy-jobs-title h2{font-size:18px}.hy-jobs-title .primary{min-width:auto!important;padding:8px 10px!important;font-size:11px!important}.hy-jobs-filters{grid-template-columns:1fr;margin-top:10px}.order-card{display:block!important}.order-right{margin-top:10px!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}.order-right .order-amount{grid-column:1/-1!important}.order-right button{width:100%!important;min-height:42px!important}.order-detail{padding:11px!important}
+}
+@media(max-width:390px){.hy-dash-actions{grid-template-columns:1fr}.hy-dash-actions button{min-height:92px}.hy-dash-actions b{float:inline-start;margin:0 0 0 10px}}
